@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Modern CSS Reset */
+
+body {
+  font-family: "Roboto", sans-serif;
+  background-color: var(--color-slate-900);
+}

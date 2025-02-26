@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Change to your database provider if needed
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  HR
+  STAFF
+}
+
+enum TaskStatus {
+  ONGOING
+  PENDING
+  COMPLETED
+}
+
+enum RequestStatus {
+  ACCEPT
+  REJECT
+  PENDING
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  employeeId     String    @unique
+  username       String    @unique
+  password       String
+  dateOfJoining  DateTime  // Stored as DateTime for consistency
+  role        String      @default("STAFF")  // Add default value
+  status         UserStatus @default(ACTIVE)
+  
+  tasks          Task[]
+  attendances    Attendance[]
+  attendanceRequests RequestForAttendance[]
+}
+
+model Task {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String
+  status      TaskStatus  @default(ONGOING)
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now())  // Add default value
+  completedAt DateTime?
+  dueDate     DateTime?
+}
+
+model Attendance {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  date     DateTime
+  punchIn  DateTime
+  punchOut DateTime?
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RequestForAttendance {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  status   RequestStatus
+  date     DateTime
+  punchIn  DateTime
+  punchOut DateTime?
+  reason   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
