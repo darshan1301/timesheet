@@ -13,6 +13,7 @@ import {
 import { getAllTasks, deleteTask, updateTask } from "../services/task.service";
 import Modal from "../components/Modal";
 import TaskForm from "../components/TaskForm.jsx";
+import Loader from "../components/Loader.jsx";
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -148,11 +149,7 @@ const TaskList = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (

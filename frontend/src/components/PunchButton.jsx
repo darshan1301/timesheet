@@ -5,6 +5,7 @@ import {
   checkPunchStatus,
   punchInOut,
 } from "../services/punchingmachine.service";
+import Loader from "./Loader";
 
 const PunchButton = () => {
   const [isPunchedIn, setIsPunchedIn] = useState(false);
@@ -19,6 +20,7 @@ const PunchButton = () => {
   }, []);
 
   const fetchPunchStatus = async () => {
+    setIsLoading(true);
     try {
       const data = await checkPunchStatus();
       setIsPunchedIn(data.isPunchedIn);
@@ -31,6 +33,8 @@ const PunchButton = () => {
       }
     } catch (error) {
       toast.error("Failed to fetch punch status");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -63,6 +67,10 @@ const PunchButton = () => {
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <Loader />;
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-6">
