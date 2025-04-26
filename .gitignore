@@ -56,9 +56,11 @@ frontend/dist
 frontend/coverage
 frontend/.temp
 frontend/.cache
+frontend/Dockerfile
 
 # Backend specific
 backend/dist
+backend/Dockerfile
 backend/build
 backend/coverage
 backend/.nyc_output
@@ -76,4 +78,4 @@ temp/
 .next
 .nuxt
 .vercel
-.serverless/
+.serverless

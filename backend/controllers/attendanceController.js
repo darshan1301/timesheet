@@ -76,6 +76,8 @@ const createAttendanceRequest = async (req, res) => {
   const { date, punchIn, punchOut, reason } = req.body;
   const { userId } = req.user;
 
+  console.log("Request body:", req.body);
+
   try {
     // Basic validation
     if (!userId || !date || !punchIn || !punchOut || !reason) {
@@ -85,24 +87,43 @@ const createAttendanceRequest = async (req, res) => {
       });
     }
 
-    // Ensure date strings are in ISO format to avoid 'Invalid Date' issues
-    const requestDate = new Date(date);
+    // Convert to Indian timezone (UTC+5:30)
+    const indianTimeOffset = "+05:30";
+
+    // Ensure date strings are in ISO format with Indian timezone
+    const requestDate = new Date(`${date}T00:00:00${indianTimeOffset}`);
 
     // For punch times, check if they're full ISO strings or just time values
     let punchInDate, punchOutDate;
 
     // If punchIn/punchOut are just time values like "09:30", combine with date
     if (punchIn.includes("T")) {
-      punchInDate = new Date(punchIn);
+      // If it already has a 'T', ensure it has the right timezone
+      punchInDate = new Date(
+        punchIn.includes("+") || punchIn.includes("Z")
+          ? punchIn
+          : `${punchIn}${indianTimeOffset}`
+      );
     } else {
-      punchInDate = new Date(`${date}T${punchIn}`);
+      punchInDate = new Date(`${date}T${punchIn}${indianTimeOffset}`);
     }
 
     if (punchOut.includes("T")) {
-      punchOutDate = new Date(punchOut);
+      // If it already has a 'T', ensure it has the right timezone
+      punchOutDate = new Date(
+        punchOut.includes("+") || punchOut.includes("Z")
+          ? punchOut
+          : `${punchOut}${indianTimeOffset}`
+      );
     } else {
-      punchOutDate = new Date(`${date}T${punchOut}`);
+      punchOutDate = new Date(`${date}T${punchOut}${indianTimeOffset}`);
     }
+
+    console.log("Debug dates in IST:", {
+      requestDate: requestDate.toISOString(),
+      punchInDate: punchInDate.toISOString(),
+      punchOutDate: punchOutDate.toISOString(),
+    });
 
     // Validate that dates are valid
     if (
@@ -115,7 +136,10 @@ const createAttendanceRequest = async (req, res) => {
       });
     }
 
-    const currentDate = new Date();
+    // Use Indian timezone for current date comparison
+    const currentDate = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
 
     // Calculate the difference in days
     const daysDifference = Math.floor(
@@ -141,8 +165,8 @@ const createAttendanceRequest = async (req, res) => {
       where: {
         userId,
         date: {
-          gte: new Date(requestDate.setHours(0, 0, 0, 0)),
-          lt: new Date(requestDate.setHours(24, 0, 0, 0)),
+          gte: new Date(new Date(requestDate).setHours(0, 0, 0, 0)),
+          lt: new Date(new Date(requestDate).setHours(24, 0, 0, 0)),
         },
       },
     });
@@ -164,6 +188,7 @@ const createAttendanceRequest = async (req, res) => {
         status: "PENDING",
       },
     });
+    console.log("DB call", newRequest);
 
     res.status(201).json({
       message: "Attendance request created successfully.",

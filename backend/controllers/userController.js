@@ -1,6 +1,6 @@
 const prisma = require("../db/prisma-client.js");
 const { createToken } = require("../middleware/authentication.js");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const userLogin = async (req, res) => {
   const { username, password } = req.body; // Get username and password from request body

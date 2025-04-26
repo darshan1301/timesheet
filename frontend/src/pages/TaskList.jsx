@@ -208,7 +208,7 @@ const TaskList = () => {
                 <option value="">All Statuses</option>
                 <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="PENDING">PENDING</option>
               </select>
             </div>
 
