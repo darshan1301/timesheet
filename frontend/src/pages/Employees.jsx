@@ -28,7 +28,7 @@ const Employees = () => {
       setUsers(data.users);
       setPagination(data.pagination);
     } catch (error) {
-      toast.error("Failed to fetch employees");
+      toast.error(error.message || "Access Denied");
     } finally {
       setIsLoading(false);
     }

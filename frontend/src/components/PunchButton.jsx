@@ -6,30 +6,8 @@ import { punchInOut } from "../services/punchingmachine.service";
 import Loader from "./Loader";
 import useGetUser from "../hooks/useGetUser";
 import { getUserLocation } from "../utils/getUserLocation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import LiveClock from "./LiveClock";
-
-function ElapsedTime({ start }) {
-  const [elapsed, setElapsed] = useState(Date.now() - new Date(start));
-
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setElapsed(Date.now() - new Date(start));
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [start]);
-
-  const totalSec = Math.floor(elapsed / 1000);
-  const hrs = Math.floor(totalSec / 3600);
-  const mins = Math.floor((totalSec % 3600) / 60);
-  const secs = totalSec % 60;
-
-  return (
-    <p className="text-yellow-300 mb-4">
-      You’ve been punched in for {hrs}h {mins}m {secs}s
-    </p>
-  );
-}
 
 const PunchButton = () => {
   const { isLoading, userinfo } = useGetUser();
@@ -64,11 +42,6 @@ const PunchButton = () => {
         className="bg-slate-800/40 backdrop-blur-lg rounded-3xl p-8 md:p-12 shadow-xl
         flex flex-col items-center max-w-xl w-full">
         <LiveClock />
-
-        {/* Elapsed Time — only when currently punched in */}
-        {userinfo.isPunchedIn &&
-          !userinfo.isCompleted &&
-          userinfo.punchInTime && <ElapsedTime start={userinfo.punchInTime} />}
 
         {/* Status Indicator */}
         <div className="mb-8 text-center">

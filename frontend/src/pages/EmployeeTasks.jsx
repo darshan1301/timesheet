@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { getEmployeeTasks } from "../services/dashboard.service";
 import { ArrowLeft, Clock, CheckCircle, XCircle } from "lucide-react";
 import { getNameFromEmail } from "../components/Sidebar";
+import Loader from "../components/Loader";
 
 const EmployeeTasks = () => {
   const { employeeId } = useParams();
@@ -29,11 +30,7 @@ const EmployeeTasks = () => {
   }, [employeeId]);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
@@ -55,7 +52,7 @@ const EmployeeTasks = () => {
               className={`rounded-xl border p-6 backdrop-blur-sm ${
                 task.status === "COMPLETED"
                   ? "bg-green-500/10 border-green-500/20"
-                  : task.status === "CANCELLED"
+                  : task.status === "PENDING"
                   ? "bg-red-500/10 border-red-500/20"
                   : "bg-blue-500/10 border-blue-500/20"
               }`}>
@@ -66,7 +63,7 @@ const EmployeeTasks = () => {
                 <div className="flex items-center gap-2">
                   {task.status === "COMPLETED" ? (
                     <CheckCircle className="w-5 h-5 text-green-500" />
-                  ) : task.status === "CANCELLED" ? (
+                  ) : task.status === "PENDING" ? (
                     <XCircle className="w-5 h-5 text-red-500" />
                   ) : (
                     <Clock className="w-5 h-5 text-blue-500" />

@@ -1,8 +1,9 @@
+/* eslint-disable react/prop-types */
 import { LogOut, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import useGetUser from "../hooks/useGetUser";
 import { useMemo } from "react";
 
@@ -122,11 +123,15 @@ const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
           </Link>
         ))}
       </div>
+
       {/* User info and logout section */}
-      <div className="border-t border-slate-700 pt-4 mt-4">
+      <div className="border-t h-full flex flex-col gap-3 border-slate-700 pt-4 mt-4">
         {/* User Info */}
+        {!isLoading && userinfo?.punchInTime && (
+          <ElapsedTime start={userinfo.punchInTime} />
+        )}
         {!isLoading && (
-          <div className="lg:mx-4 px-4 py-3 mb-2 bg-slate-900 rounded-md">
+          <div className="lg:mx-4 px-4 py-3 bg-slate-900 rounded-md">
             <div className="flex items-center gap-3">
               <div className="bg-slate-700 p-2 rounded-full">
                 <User className="w-5 h-5 text-stone-300" />
@@ -142,7 +147,6 @@ const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
             </div>
           </div>
         )}
-
         <div
           onClick={handleLogout}
           className="flex items-center gap-4 lg:mx-4 px-4 py-3 rounded-md 
@@ -157,5 +161,31 @@ const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
     </div>
   );
 };
+
+function ElapsedTime({ start }) {
+  const [elapsed, setElapsed] = useState(Date.now() - new Date(start));
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setElapsed(Date.now() - new Date(start));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [start]);
+
+  const totalSec = Math.floor(elapsed / 1000);
+  const hrs = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+
+  return (
+    <p
+      className="flex items-center lg:mx-4 px-4 py-3 rounded-md 
+            transition-all duration-200 ease-in-out
+            bg-slate-900
+            text-green-600 font-medium text-sm">
+      You’ve been punched in for {hrs}h {mins}m {secs}s
+    </p>
+  );
+}
 
 export default Sidebar;
