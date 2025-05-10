@@ -160,11 +160,11 @@ const createAttendanceRequest = async (req, res) => {
       punchOutDate = new Date(`${date}T${punchOut}${indianTimeOffset}`);
     }
 
-    console.log("Debug dates in IST:", {
-      requestDate: requestDate.toISOString(),
-      punchInDate: punchInDate.toISOString(),
-      punchOutDate: punchOutDate.toISOString(),
-    });
+    // console.log("Debug dates in IST:", {
+    //   requestDate: requestDate.toISOString(),
+    //   punchInDate: punchInDate.toISOString(),
+    //   punchOutDate: punchOutDate.toISOString(),
+    // });
 
     // Validate that dates are valid
     if (
@@ -229,7 +229,7 @@ const createAttendanceRequest = async (req, res) => {
         status: "PENDING",
       },
     });
-    console.log("DB call", newRequest);
+    // console.log("DB call", newRequest);
 
     res.status(201).json({
       message: "Attendance request created successfully.",
@@ -249,57 +249,83 @@ const updateAttendanceRequest = async (req, res) => {
   const { status } = req.body;
   const { userId } = req.user;
 
-  // console.log(status, typeof userId);
   try {
-    // Check if status is valid
+    // 1. Validate inputs
     if (!["ACCEPT", "REJECT"].includes(status)) {
       return res
         .status(400)
         .json({ message: "Invalid status. Use 'ACCEPT' or 'REJECT'." });
     }
-
-    // Validate requestId
     if (!requestId || isNaN(parseInt(requestId))) {
       return res.status(400).json({ message: "Invalid request ID" });
     }
+    const parsedRequestId = parseInt(requestId, 10);
 
-    const parsedRequestId = parseInt(requestId);
-
-    // Fetch the user making the update request
+    // 2. Only ADMIN or HR can approve/reject
     const adminOrHR = await prisma.user.findUnique({
-      where: { id: parseInt(userId) },
+      where: { id: parseInt(userId, 10) },
       select: { role: true },
     });
-
-    // Ensure the user is either ADMIN or HR
-    if (!adminOrHR || (adminOrHR.role !== "ADMIN" && adminOrHR.role !== "HR")) {
+    if (!adminOrHR || !["ADMIN", "HR"].includes(adminOrHR.role)) {
       return res.status(403).json({
         message:
           "Access denied. Only ADMIN or HR can update attendance requests.",
       });
     }
 
-    // Find the attendance request
+    // 3. Fetch the attendance request
     const attendanceRequest = await prisma.requestForAttendance.findUnique({
       where: { id: parsedRequestId },
     });
-
     if (!attendanceRequest) {
       return res.status(404).json({ message: "Attendance request not found." });
     }
 
-    // Update the attendance request status - using parsedRequestId here
+    // 4. Update its status
     const updatedRequest = await prisma.requestForAttendance.update({
-      where: { id: parsedRequestId }, // Using the parsed integer ID
+      where: { id: parsedRequestId },
       data: { status },
     });
 
+    // 5. If approved, upsert into Attendance
+    if (status === "ACCEPT") {
+      // look for existing attendance on that date for the user
+      const existing = await prisma.attendance.findFirst({
+        where: {
+          userId: attendanceRequest.userId,
+          date: attendanceRequest.date,
+        },
+      });
+
+      if (existing) {
+        // update punch times
+        await prisma.attendance.update({
+          where: { id: existing.id },
+          data: {
+            punchIn: attendanceRequest.punchIn,
+            punchOut: attendanceRequest.punchOut,
+          },
+        });
+      } else {
+        // create a new attendance record
+        await prisma.attendance.create({
+          data: {
+            userId: attendanceRequest.userId,
+            date: attendanceRequest.date,
+            punchIn: attendanceRequest.punchIn,
+            punchOut: attendanceRequest.punchOut,
+          },
+        });
+      }
+    }
+
+    // 6. Send back the result
     res.status(200).json({
       message: `Attendance request has been ${status.toLowerCase()}.`,
       request: updatedRequest,
     });
   } catch (error) {
-    console.error("Error updating attendance request:", error.message);
+    console.error("Error updating attendance request:", error);
     res.status(500).json({ message: "Error updating attendance request." });
   }
 };

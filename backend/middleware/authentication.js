@@ -43,7 +43,7 @@ const isAuthenticated = (req, res, next) => {
 function authRole(...allowedRoles) {
   return (req, res, next) => {
     if (!allowedRoles.includes(req.user.role)) {
-      console.log("AUTH_ROLE", req.user);
+      // console.log("AUTH_ROLE", req.user);
       return res.status(403).json({ message: "Access denied" });
     }
     next();

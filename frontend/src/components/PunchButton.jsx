@@ -1,11 +1,35 @@
+// PunchButton.jsx
 import { toast } from "react-hot-toast";
-import { Fingerprint, Clock } from "lucide-react";
+import { Fingerprint } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { punchInOut } from "../services/punchingmachine.service";
 import Loader from "./Loader";
 import useGetUser from "../hooks/useGetUser";
 import { getUserLocation } from "../utils/getUserLocation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import LiveClock from "./LiveClock";
+
+function ElapsedTime({ start }) {
+  const [elapsed, setElapsed] = useState(Date.now() - new Date(start));
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setElapsed(Date.now() - new Date(start));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [start]);
+
+  const totalSec = Math.floor(elapsed / 1000);
+  const hrs = Math.floor(totalSec / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+
+  return (
+    <p className="text-yellow-300 mb-4">
+      You’ve been punched in for {hrs}h {mins}m {secs}s
+    </p>
+  );
+}
 
 const PunchButton = () => {
   const { isLoading, userinfo } = useGetUser();
@@ -17,7 +41,6 @@ const PunchButton = () => {
     const loadingToast = toast.loading(
       userinfo.isPunchedIn ? "Punching out..." : "Punching in..."
     );
-
     try {
       const location = await getUserLocation();
       const data = await punchInOut({
@@ -25,34 +48,27 @@ const PunchButton = () => {
         latitude: location.latitude,
       });
       queryClient.invalidateQueries({ queryKey: ["userinfo"] });
-      toast.success(data.message, {
-        id: loadingToast,
-      });
+      toast.success(data.message, { id: loadingToast });
     } catch (error) {
-      toast.error(error.message, {
-        id: loadingToast,
-      });
+      toast.error(error.message, { id: loadingToast });
     } finally {
       setLoader(false);
     }
   };
 
-  if (loader || isLoading) {
-    return <Loader />;
-  }
+  if (loader || isLoading) return <Loader />;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] p-6">
       <div
         className="bg-slate-800/40 backdrop-blur-lg rounded-3xl p-8 md:p-12 shadow-xl
         flex flex-col items-center max-w-xl w-full">
-        {/* Current Time Display */}
-        <div className="flex items-center gap-2 text-gray-400 mb-8">
-          <Clock className="w-5 h-5" />
-          <span className="text-xl font-medium">
-            {new Date().toLocaleTimeString()}
-          </span>
-        </div>
+        <LiveClock />
+
+        {/* Elapsed Time — only when currently punched in */}
+        {userinfo.isPunchedIn &&
+          !userinfo.isCompleted &&
+          userinfo.punchInTime && <ElapsedTime start={userinfo.punchInTime} />}
 
         {/* Status Indicator */}
         <div className="mb-8 text-center">
@@ -103,7 +119,6 @@ const PunchButton = () => {
         )}
 
         {/* Punch Button */}
-
         <button
           onClick={handlePunch}
           disabled={isLoading || userinfo.isCompleted}
@@ -127,11 +142,9 @@ const PunchButton = () => {
                 : "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700"
             }
           `}>
-          {/* Ripple effect */}
           <span
             className="absolute inset-0 w-full h-full bg-white/30 scale-0 rounded-full 
             group-active:scale-100 transition-transform duration-300"></span>
-
           <Fingerprint className="w-10 h-10" />
           <span className="text-2xl">
             {userinfo.isCompleted

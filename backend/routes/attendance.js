@@ -2,7 +2,6 @@ const express = require("express");
 const {
   punchInOut,
   createAttendanceRequest,
-  updateAttendanceRequest,
   getCurrentPunchStatus,
   getAttendanceRequests,
 } = require("../controllers/attendanceController");
