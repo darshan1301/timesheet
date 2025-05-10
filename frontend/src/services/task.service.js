@@ -1,12 +1,4 @@
-const baseUrl = import.meta.env.VITE_BASE_URL;
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("jwtToken");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-};
+import { baseUrl, getAuthHeaders } from "./config";
 
 // Get all tasks
 export const getAllTasks = async () => {

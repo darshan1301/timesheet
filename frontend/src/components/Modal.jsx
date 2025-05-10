@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 // Modal.jsx
 import { cloneElement, createContext, useContext, useState } from "react";
 import { createPortal } from "react-dom";

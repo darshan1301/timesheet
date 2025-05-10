@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { Search, Calendar, AlertCircle, UserPlus } from "lucide-react";
+import { Search, Calendar, UserPlus, UserPen } from "lucide-react";
 import { getUsers } from "../services/dashboard.service";
 import Modal from "../components/Modal";
 import NewEmployeeForm from "../components/NewEmployeeForm";
 import { Link } from "react-router-dom";
+import Loader from "../components/Loader";
+
 const Employees = () => {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,11 +50,7 @@ const Employees = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
-    );
+    return <Loader />;
   }
 
   return (
@@ -120,13 +118,12 @@ const Employees = () => {
             const todayAttendance = user.attendances[0];
 
             return (
-              <Link
-                to={`/employee-tasks/${user.id}`}
+              <div
                 key={user.id}
                 className="bg-slate-800/40 backdrop-blur-sm rounded-xl border border-slate-700 p-6 flex flex-col">
                 {/* Header: Username, EmployeeID, and Status */}
                 <div className="flex items-start justify-between mb-6">
-                  <div>
+                  <Link to={`/employee-tasks/${user.id}`} key={user.id}>
                     <h3 className="font-semibold text-lg text-white mb-1">
                       {user.username}
                     </h3>
@@ -135,16 +132,7 @@ const Employees = () => {
                       <span>•</span>
                       <span>{user.role}</span>
                     </div>
-                  </div>
-                  {/* <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap
-            ${
-              user.status === "ACTIVE"
-                ? "bg-green-500/10 text-green-500"
-                : "bg-red-500/10 text-red-500"
-            }`}>
-                  {user.status}
-                </span> */}
+                  </Link>
                 </div>
 
                 {/* Info Section */}
@@ -155,26 +143,35 @@ const Employees = () => {
                   </div>
                 </div>
 
+                {/* Manage Employee Link */}
+                <Link
+                  to={`/manage-employee/${user.id}`}
+                  state={{ employeeData: user }}
+                  className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors mb-6">
+                  <UserPen className="w-4 h-4" />
+                  <span>Manage Employee</span>
+                </Link>
+
                 {/* Attendance Status */}
                 <div className="mt-auto pt-4 border-t border-slate-700">
                   <div
                     className={`flex items-center justify-center gap-2 p-2 rounded-lg font-medium
-            ${
-              todayAttendance?.punchOut
-                ? "bg-red-500/10 text-red-500"
-                : todayAttendance?.punchIn
-                ? "bg-green-500/10 text-green-500"
-                : "bg-gray-500/10 text-gray-400"
-            }`}>
+      ${
+        todayAttendance?.punchOut
+          ? "bg-red-500/10 text-red-500"
+          : todayAttendance?.punchIn
+          ? "bg-green-500/10 text-green-500"
+          : "bg-gray-500/10 text-gray-400"
+      }`}>
                     <div
                       className={`w-2 h-2 rounded-full
-            ${
-              todayAttendance?.punchOut
-                ? "bg-red-500"
-                : todayAttendance?.punchIn
-                ? "bg-green-500"
-                : "bg-gray-400"
-            }`}
+        ${
+          todayAttendance?.punchOut
+            ? "bg-red-500"
+            : todayAttendance?.punchIn
+            ? "bg-green-500"
+            : "bg-gray-400"
+        }`}
                     />
                     {todayAttendance?.punchOut
                       ? `Punched Out at ${formatTime(todayAttendance.punchOut)}`
@@ -183,7 +180,7 @@ const Employees = () => {
                       : "Not Punched In"}
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

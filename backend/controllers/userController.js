@@ -102,4 +102,44 @@ const userSignup = async (req, res) => {
   }
 };
 
-module.exports = { userLogin, userSignup };
+// add updateUser function to update user details and also include locationId and status
+const updateUser = async (req, res) => {
+  const { id } = req.params; // Get user ID from request parameters
+  const { username, locationId, status, dateOfJoining, role } = req.body; // Get updated user details from request body
+
+  try {
+    // Find the user by ID using Prisma
+    const user = await prisma.user.findUnique({
+      where: {
+        id: parseInt(id),
+      },
+    });
+
+    if (!user) {
+      return res.status(404).send("User not found.");
+    }
+
+    // Update the user details in the database
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: parseInt(id),
+      },
+      data: {
+        username: username,
+        locationId: Number(locationId),
+        status: status,
+        dateOfJoining: dateOfJoining
+          ? new Date(dateOfJoining)
+          : user.dateOfJoining, // Use the provided dateOfJoining or keep the existing one
+        role: role, // Update the role if provided
+      },
+    });
+
+    res.status(200).json(updatedUser); // Return the updated user details in the response
+  } catch (error) {
+    console.error("Error updating user:", error.message);
+    res.status(500).send("Error updating user");
+  }
+};
+
+module.exports = { userLogin, userSignup, updateUser };

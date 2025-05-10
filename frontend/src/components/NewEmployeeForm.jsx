@@ -2,7 +2,6 @@ import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { Eye, EyeOff, User, BriefcaseBusiness, Calendar } from "lucide-react";
 import { createEmployee } from "../services/dashboard.service";
-import { useAuth } from "../contexts/AuthContext";
 
 const NewEmployeeForm = () => {
   const [isLoading, setIsLoading] = useState(false);

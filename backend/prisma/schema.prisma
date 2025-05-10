@@ -38,7 +38,10 @@ model User {
   dateOfJoining  DateTime  // Stored as DateTime for consistency
   role        String      @default("STAFF")  // Add default value
   status         UserStatus @default(ACTIVE)
-  
+  locationId     Int?      
+
+  location Location? @relation(fields: [locationId], references: [id])
+
   tasks          Task[]
   attendances    Attendance[]
   attendanceRequests RequestForAttendance[]
@@ -64,6 +67,8 @@ model Attendance {
   date     DateTime
   punchIn  DateTime
   punchOut DateTime?
+  locationId Int?
+  location Location? @relation(fields: [locationId], references: [id])
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -76,4 +81,14 @@ model RequestForAttendance {
   punchOut DateTime?
   reason   String
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Location {
+  id          Int      @id @default(autoincrement())
+  name        String
+  latitude    Float
+  longitude   Float
+
+  user User[]
+  attendance Attendance[]
 }

@@ -7,7 +7,6 @@ import {
   XCircle,
   Clock,
   Filter,
-  Search,
   PlusCircle,
 } from "lucide-react";
 import { getAllTasks, deleteTask, updateTask } from "../services/task.service";

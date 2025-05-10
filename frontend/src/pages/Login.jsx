@@ -12,7 +12,7 @@ const Login = () => {
     password: "",
   });
   const navigate = useNavigate();
-  const { setToken, setUsername } = useAuth();
+  const { setToken } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,7 +32,6 @@ const Login = () => {
       throw new Error("Login failed");
     }
     setToken(data.token);
-    setUsername(data.username);
     toast.success("Logged In.");
     return navigate("/");
   };

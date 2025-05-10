@@ -10,7 +10,7 @@ const { authRole } = require("../middleware/authentication");
 
 const router = express.Router();
 
-router.get("/punchingmachine", punchInOut);
+router.post("/punchingmachine", punchInOut);
 router.get("/status", getCurrentPunchStatus);
 router.post("/", createAttendanceRequest);
 

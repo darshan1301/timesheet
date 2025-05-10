@@ -1,13 +1,56 @@
 const moment = require("moment");
 const prisma = require("../db/prisma-client");
+const calculateDistance = require("../utils/calculateDistance");
 
 const punchInOut = async (req, res) => {
   const { userId } = req.user;
+  const { latitude, longitude } = req.body;
   const currentTime = moment().toDate();
   const startOfDay = moment().startOf("day").toDate();
   const endOfDay = moment().endOf("day").toDate();
 
+  // console.log("req body", latitude, longitude);
+
   try {
+    // Get user with their assigned location
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { location: true },
+    });
+
+    // Location validation - only if user has an assigned location
+    if (user.location) {
+      const distance = calculateDistance(
+        latitude,
+        longitude,
+        user.location.latitude,
+        user.location.longitude
+      );
+
+      // Validate latitude and longitude
+      if (latitude === undefined || longitude === undefined) {
+        return res.status(400).json({
+          message: "Location is required for attendance.",
+        });
+      }
+
+      // Validate that latitude and longitude are valid numbers
+      if (isNaN(parseFloat(latitude)) || isNaN(parseFloat(longitude))) {
+        return res.status(400).json({
+          message: "Latitude and longitude must be valid numbers.",
+        });
+      }
+
+      // 40 meters radius check
+      if (distance > 100) {
+        return res.status(403).json({
+          message: "You must be within 100 meters of your assigned location.",
+          distance: Math.round(distance),
+          unit: "meters",
+        });
+      }
+    }
+
     // Check if user already has an attendance record for today
     const todayAttendance = await prisma.attendance.findFirst({
       where: {
@@ -27,12 +70,14 @@ const punchInOut = async (req, res) => {
           userId: userId,
           date: currentTime,
           punchIn: currentTime,
+          locationId: user.location?.id || null, // Store location ID if exists
         },
       });
 
       return res.status(200).json({
         message: "Punched in successfully.",
         punchInTime: newAttendance.punchIn,
+        location: user.location?.name || "No assigned location",
       });
     }
 
@@ -40,12 +85,8 @@ const punchInOut = async (req, res) => {
     if (todayAttendance && !todayAttendance.punchOut) {
       // Update with punch-out time
       const updatedAttendance = await prisma.attendance.update({
-        where: {
-          id: todayAttendance.id,
-        },
-        data: {
-          punchOut: currentTime,
-        },
+        where: { id: todayAttendance.id },
+        data: { punchOut: currentTime },
       });
 
       return res.status(200).json({
@@ -76,7 +117,7 @@ const createAttendanceRequest = async (req, res) => {
   const { date, punchIn, punchOut, reason } = req.body;
   const { userId } = req.user;
 
-  console.log("Request body:", req.body);
+  // console.log("Request body:", req.body);
 
   try {
     // Basic validation
@@ -264,7 +305,7 @@ const updateAttendanceRequest = async (req, res) => {
 };
 
 const getCurrentPunchStatus = async (req, res) => {
-  const { userId } = req.user;
+  const { userId, username, role } = req.user;
   const startOfDay = moment().startOf("day").toDate();
   const endOfDay = moment().endOf("day").toDate();
 
@@ -286,12 +327,19 @@ const getCurrentPunchStatus = async (req, res) => {
       },
     });
 
+    const user = {
+      userId,
+      username,
+      role,
+    };
     // If no attendance record exists for today
     if (!todayAttendance) {
       return res.status(200).json({
         isPunchedIn: false,
         lastPunchTime: null,
-        message: "No punch record for today",
+        message: "No punch record for today!",
+        user,
+        isCompleted: false,
       });
     }
 
@@ -302,6 +350,8 @@ const getCurrentPunchStatus = async (req, res) => {
         lastPunchTime: todayAttendance.punchIn,
         message: "Currently punched in",
         punchInTime: todayAttendance.punchIn,
+        user,
+        isCompleted: false,
       });
     }
 
@@ -313,6 +363,8 @@ const getCurrentPunchStatus = async (req, res) => {
         message: "Already completed attendance for today",
         punchInTime: todayAttendance.punchIn,
         punchOutTime: todayAttendance.punchOut,
+        user,
+        isCompleted: true,
       });
     }
   } catch (error) {
@@ -334,7 +386,7 @@ const getAttendanceRequests = async (req, res) => {
     limit = 10,
   } = req.query;
 
-  console.log(req.user);
+  // console.log(req.user);
 
   // Ensure we have a valid user ID from the authenticated request
   if (!req.user || !req.user.userId) {

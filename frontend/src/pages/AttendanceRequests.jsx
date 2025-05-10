@@ -1,25 +1,14 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import {
-  Search,
-  Calendar,
-  PlusCircle,
-  Filter,
-  ChevronDown,
-  Check,
-  X,
-  Clock,
-} from "lucide-react";
+import { Calendar, PlusCircle, Filter, Check, X, Clock } from "lucide-react";
 import {
   getAttendanceRequests,
   updateAttendanceRequestStatus,
 } from "../services/attendanceRequest.service";
-import { useAuth } from "../contexts/AuthContext";
 import Modal from "../components/Modal";
 import AttendanceRequestForm from "../components/AttendanceRequestForm";
 
 const AttendanceRequests = () => {
-  const { headers } = useAuth();
   const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({});

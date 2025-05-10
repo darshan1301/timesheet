@@ -15,15 +15,28 @@ import Employees from "./pages/Employees";
 import { PublicRoute, ProtectedRoute } from "./auth/ProtectedRoutes";
 import EmployeeTasks from "./pages/EmployeeTasks";
 import AttendanceSheet from "./pages/AttendanceSheet";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import ManageEmployee from "./pages/ManageEmployee";
+import Locations from "./pages/Locations";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, //seconds
+    },
+  },
+});
 
 const App = () => {
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
+      <ReactQueryDevtools initialIsOpen={false} />
       <Toaster
         position="top-center"
         toastOptions={{
           // Default options for all toasts
-          duration: 3000,
+          duration: 2000,
           style: {
             background: "#363636",
             color: "#fff",
@@ -83,9 +96,14 @@ const App = () => {
               path="/employee-tasks/:employeeId"
               element={<EmployeeTasks />}
             />
+            <Route
+              path="/manage-employee/:employeeId"
+              element={<ManageEmployee />}
+            />
             <Route path="/task-list" element={<TaskList />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/attendance-sheet" element={<AttendanceSheet />} />
+            <Route path="/locations" element={<Locations />} />
 
             {/* 404 page for unknown routes under protected layout */}
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -95,7 +113,7 @@ const App = () => {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
-    </>
+    </QueryClientProvider>
   );
 };
 

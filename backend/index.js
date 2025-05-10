@@ -37,6 +37,12 @@ app.use(
   authRole("ADMIN", "HR"),
   require("./routes/dashboard.js")
 );
+app.use(
+  "/location",
+  isAuthenticated,
+  authRole("ADMIN", "HR"),
+  require("./routes/location.js")
+);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

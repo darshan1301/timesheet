@@ -1,22 +1,5 @@
-const baseUrl = import.meta.env.VITE_BASE_URL;
+import { baseUrl, getAuthHeaders } from "./config";
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("jwtToken");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-};
-
-/**
- * Create a new attendance request
- * @param {Object} requestData - Request data
- * @param {string} requestData.date - Date for the request
- * @param {string} requestData.punchIn - Punch-in time
- * @param {string} requestData.punchOut - Punch-out time (optional)
- * @param {string} requestData.reason - Reason for the request
- * @returns {Promise<Object>} - API response
- */
 export const createAttendanceRequest = async (requestData) => {
   try {
     const response = await fetch(`${baseUrl}/attendance`, {

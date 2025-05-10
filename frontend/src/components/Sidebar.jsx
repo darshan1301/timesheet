@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
 import { useEffect, useRef } from "react";
+import useGetUser from "../hooks/useGetUser";
 
 export function getNameFromEmail(email) {
   if (!email || typeof email !== "string") return "";
@@ -35,7 +36,7 @@ const items = [
     icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWxpc3QtdG9kbyI+PHJlY3QgeD0iMyIgeT0iNSIgd2lkdGg9IjYiIGhlaWdodD0iNiIgcng9IjEiLz48cGF0aCBkPSJtMyAxNyAyIDIgNC00Ii8+PHBhdGggZD0iTTEzIDZoOCIvPjxwYXRoIGQ9Ik0xMyAxMmg4Ii8+PHBhdGggZD0iTTEzIDE4aDgiLz48L3N2Zz4=",
   },
   {
-    label: "Attendance Requests",
+    label: "Attendance Corrections",
     path: "/attendance-requests",
     icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXVzZXItcGVuIj48cGF0aCBkPSJNMTEuNSAxNUg3YTQgNCAwIDAgMC00IDR2MiIvPjxwYXRoIGQ9Ik0yMS4zNzggMTYuNjI2YTEgMSAwIDAgMC0zLjAwNC0zLjAwNGwtNC4wMSA0LjAxMmEyIDIgMCAwIDAtLjUwNi44NTRsLS44MzcgMi44N2EuNS41IDAgMCAwIC42Mi42MmwyLjg3LS44MzdhMiAyIDAgMCAwIC44NTQtLjUwNnoiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjciIHI9IjQiLz48L3N2Zz4=",
   },
@@ -49,18 +50,22 @@ const items = [
     path: "/attendance-sheet",
     icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRhYmxlLXByb3BlcnRpZXMiPjxwYXRoIGQ9Ik0xNSAzdjE4Ii8+PHJlY3Qgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiB4PSIzIiB5PSIzIiByeD0iMiIvPjxwYXRoIGQ9Ik0yMSA5SDMiLz48cGF0aCBkPSJNMjEgMTVIMyIvPjwvc3ZnPg==",
   },
+  {
+    label: "Locations",
+    path: "/locations",
+    icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1hcC1waW5uZWQtaWNvbiBsdWNpZGUtbWFwLXBpbm5lZCI+PHBhdGggZD0iTTE4IDhjMCAzLjYxMy0zLjg2OSA3LjQyOS01LjM5MyA4Ljc5NWExIDEgMCAwIDEtMS4yMTQgMEM5Ljg3IDE1LjQyOSA2IDExLjYxMyA2IDhhNiA2IDAgMCAxIDEyIDAiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjgiIHI9IjIiLz48cGF0aCBkPSJNOC43MTQgMTRoLTMuNzFhMSAxIDAgMCAwLS45NDguNjgzbC0yLjAwNCA2QTEgMSAwIDAgMCAzIDIyaDE4YTEgMSAwIDAgMCAuOTQ4LTEuMzE2bC0yLTZhMSAxIDAgMCAwLS45NDktLjY4NGgtMy43MTIiLz48L3N2Zz4=",
+  },
 ];
 
 // eslint-disable-next-line react/prop-types
 const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
-  const { clearToken, username } = useAuth();
+  const { clearToken } = useAuth();
+  const { userinfo, isLoading } = useGetUser();
   const navigate = useNavigate();
   const location = useLocation();
   const locationPathRef = useRef(location.pathname);
 
-  // Modified effect that only fires when the path changes
   useEffect(() => {
-    // Only close if the path has actually changed (real navigation)
     if (locationPathRef.current !== location.pathname) {
       if (isOpenSidebar && window.innerWidth < 1280) {
         setIsOpenSidebar(false);
@@ -104,19 +109,23 @@ const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
       {/* User info and logout section */}
       <div className="border-t border-slate-700 pt-4 mt-4">
         {/* User Info */}
-        <div className="lg:mx-4 px-4 py-3 mb-2 bg-slate-900 rounded-md">
-          <div className="flex items-center gap-3">
-            <div className="bg-slate-700 p-2 rounded-full">
-              <User className="w-5 h-5 text-stone-300" />
-            </div>
-            <div>
-              <div className="text-sm font-medium text-white">
-                {getNameFromEmail(username)}
+        {!isLoading && (
+          <div className="lg:mx-4 px-4 py-3 mb-2 bg-slate-900 rounded-md">
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-700 p-2 rounded-full">
+                <User className="w-5 h-5 text-stone-300" />
               </div>
-              <div className="text-xs text-stone-400">{username}</div>
+              <div>
+                <div className="text-sm font-medium text-white">
+                  {getNameFromEmail(userinfo?.user?.username)}
+                </div>
+                <div className="text-xs text-stone-400">
+                  {userinfo.user.username}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div
           onClick={handleLogout}

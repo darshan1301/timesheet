@@ -1,61 +1,30 @@
-import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { Fingerprint, Clock } from "lucide-react";
-import {
-  checkPunchStatus,
-  punchInOut,
-} from "../services/punchingmachine.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { punchInOut } from "../services/punchingmachine.service";
 import Loader from "./Loader";
+import useGetUser from "../hooks/useGetUser";
+import { getUserLocation } from "../utils/getUserLocation";
+import { useState } from "react";
 
 const PunchButton = () => {
-  const [isPunchedIn, setIsPunchedIn] = useState(false);
-  const [lastPunchTime, setLastPunchTime] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [todayPunchIn, setTodayPunchIn] = useState(null);
-  const [todayPunchOut, setTodayPunchOut] = useState(null);
-  const [isCompleted, setIsCompleted] = useState(false);
-
-  useEffect(() => {
-    fetchPunchStatus();
-  }, []);
-
-  const fetchPunchStatus = async () => {
-    setIsLoading(true);
-    try {
-      const data = await checkPunchStatus();
-      setIsPunchedIn(data.isPunchedIn);
-      setLastPunchTime(data.lastPunchTime);
-      // Set today's punch times if available
-      if (data.punchInTime) setTodayPunchIn(data.punchInTime);
-      if (data.punchOutTime) {
-        setTodayPunchOut(data.punchOutTime);
-        setIsCompleted(true);
-      }
-    } catch (error) {
-      toast.error("Failed to fetch punch status");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { isLoading, userinfo } = useGetUser();
+  const [loader, setLoader] = useState(false);
+  const queryClient = useQueryClient();
 
   const handlePunch = async () => {
-    setIsLoading(true);
+    setLoader(true);
     const loadingToast = toast.loading(
-      isPunchedIn ? "Punching out..." : "Punching in..."
+      userinfo.isPunchedIn ? "Punching out..." : "Punching in..."
     );
 
     try {
-      const data = await punchInOut();
-      setIsPunchedIn(!isPunchedIn);
-      setLastPunchTime(new Date().toISOString());
-
-      // Update punch times based on response
-      if (data.punchInTime) setTodayPunchIn(data.punchInTime);
-      if (data.punchOutTime) {
-        setTodayPunchOut(data.punchOutTime);
-        setIsCompleted(true);
-      }
-
+      const location = await getUserLocation();
+      const data = await punchInOut({
+        longitude: location.longitude,
+        latitude: location.latitude,
+      });
+      queryClient.invalidateQueries({ queryKey: ["userinfo"] });
       toast.success(data.message, {
         id: loadingToast,
       });
@@ -64,11 +33,11 @@ const PunchButton = () => {
         id: loadingToast,
       });
     } finally {
-      setIsLoading(false);
+      setLoader(false);
     }
   };
 
-  if (isLoading) {
+  if (loader || isLoading) {
     return <Loader />;
   }
 
@@ -92,40 +61,40 @@ const PunchButton = () => {
           </h2>
           <p
             className={`text-lg ${
-              isCompleted
+              userinfo.isCompleted
                 ? "text-blue-400"
-                : isPunchedIn
+                : userinfo.isPunchedIn
                 ? "text-green-400"
                 : "text-gray-400"
             }`}>
-            {isCompleted
+            {userinfo.isCompleted
               ? "Today's attendance completed"
-              : isPunchedIn
+              : userinfo.isPunchedIn
               ? "You are currently working"
               : "Not punched in yet"}
           </p>
         </div>
 
         {/* Today's Attendance Info */}
-        {(todayPunchIn || todayPunchOut) && (
+        {(userinfo.punchInTime || userinfo.punchOutTime) && (
           <div className="w-full max-w-sm mb-8 p-4 rounded-xl bg-slate-700/30">
             <h3 className="text-white text-lg font-medium mb-3">
               {" Today's Attendance"}
             </h3>
             <div className="space-y-2">
-              {todayPunchIn && (
+              {userinfo.punchInTime && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Punch In:</span>
                   <span className="text-white">
-                    {new Date(todayPunchIn).toLocaleTimeString()}
+                    {new Date(userinfo.punchInTime).toLocaleTimeString()}
                   </span>
                 </div>
               )}
-              {todayPunchOut && (
+              {userinfo.punchOutTime && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400">Punch Out:</span>
                   <span className="text-white">
-                    {new Date(todayPunchOut).toLocaleTimeString()}
+                    {new Date(userinfo.punchOutTime).toLocaleTimeString()}
                   </span>
                 </div>
               )}
@@ -134,9 +103,10 @@ const PunchButton = () => {
         )}
 
         {/* Punch Button */}
+
         <button
           onClick={handlePunch}
-          disabled={isLoading || isCompleted}
+          disabled={isLoading || userinfo.isCompleted}
           className={`
             relative overflow-hidden group
             flex items-center justify-center gap-4
@@ -145,14 +115,14 @@ const PunchButton = () => {
             transition-all duration-300 transform
             shadow-lg hover:shadow-2xl
             ${
-              isLoading || isCompleted
+              isLoading || userinfo.isCompleted
                 ? "cursor-not-allowed opacity-70"
                 : "hover:scale-105"
             }
             ${
-              isCompleted
+              userinfo.isCompleted
                 ? "bg-gray-500"
-                : isPunchedIn
+                : userinfo.isPunchedIn
                 ? "bg-red-500 hover:bg-red-600 active:bg-red-700"
                 : "bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700"
             }
@@ -164,18 +134,22 @@ const PunchButton = () => {
 
           <Fingerprint className="w-10 h-10" />
           <span className="text-2xl">
-            {isCompleted ? "Completed" : isPunchedIn ? "Punch Out" : "Punch In"}
+            {userinfo.isCompleted
+              ? "Completed"
+              : userinfo.isPunchedIn
+              ? "Punch Out"
+              : "Punch In"}
           </span>
         </button>
 
         {/* Last Action Time */}
-        {lastPunchTime && !isCompleted && (
+        {userinfo.lastPunchTime && !userinfo.isCompleted && (
           <div className="mt-8 text-center">
             <p className="text-gray-400">
-              Last {isPunchedIn ? "punch in" : "punch out"}
+              Last {userinfo.isPunchedIn ? "punch in" : "punch out"}
             </p>
             <p className="text-white text-lg font-medium">
-              {new Date(lastPunchTime).toLocaleString()}
+              {new Date(userinfo.lastPunchTime).toLocaleString()}
             </p>
           </div>
         )}

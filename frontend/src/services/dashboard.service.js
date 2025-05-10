@@ -1,4 +1,4 @@
-import { getAuthHeaders, baseUrl } from "./punchingmachine.service";
+import { baseUrl, getAuthHeaders } from "./config";
 
 export const getUsers = async (params = {}) => {
   try {
@@ -129,7 +129,6 @@ export const getAttendanceSheet = async (params = {}) => {
   }
 };
 
-// In your frontend service
 export const exportAttendanceSheet = async (params = {}) => {
   try {
     const queryParams = new URLSearchParams();

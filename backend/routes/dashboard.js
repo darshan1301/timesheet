@@ -15,7 +15,7 @@ const {
 
 const router = express.Router();
 
-router.patch("/", userUpdate);
+// router.patch("/", userUpdate);
 router.get("/getTasks/:employeeId", getUserTasks);
 router.get("/getUserAttendance/:id", getUserAttendance);
 router.get("/attendanceRequests", getAllAttendanceRequests);

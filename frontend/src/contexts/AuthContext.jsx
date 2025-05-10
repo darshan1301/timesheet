@@ -10,9 +10,6 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     Boolean(jwtToken)
   );
-  const [username, setUsername] = useState(
-    () => localStorage.getItem("username") || ""
-  );
 
   // Effect to handle authentication state changes
   useEffect(() => {
@@ -21,23 +18,16 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
     } else {
       localStorage.removeItem("jwtToken");
-      localStorage.removeItem("username");
       setIsAuthenticated(false);
-      setUsername("");
     }
   }, [jwtToken]);
 
-  const setToken = (token, user) => {
+  const setToken = (token) => {
     setJwtToken(token);
-    if (user?.username) {
-      setUsername(user.username);
-      localStorage.setItem("username", user.username);
-    }
   };
 
   const clearToken = () => {
     setJwtToken("");
-    setUsername("");
   };
 
   // Memoize headers to prevent unnecessary re-renders
@@ -48,10 +38,8 @@ export const AuthProvider = ({ children }) => {
   const contextValue = {
     jwtToken,
     isAuthenticated,
-    username,
     setToken,
     clearToken,
-    setUsername,
     headers,
   };
 

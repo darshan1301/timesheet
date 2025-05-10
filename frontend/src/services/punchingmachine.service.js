@@ -1,12 +1,4 @@
-export const baseUrl = import.meta.env.VITE_BASE_URL;
-
-export const getAuthHeaders = () => {
-  const token = localStorage.getItem("jwtToken");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-};
+import { baseUrl, getAuthHeaders } from "./config";
 
 export const checkPunchStatus = async () => {
   try {
@@ -18,7 +10,6 @@ export const checkPunchStatus = async () => {
     if (!response.ok) {
       throw new Error("Failed to fetch punch status");
     }
-
     return response.json();
   } catch (error) {
     console.error("Error checking punch status:", error.message);
@@ -26,11 +17,12 @@ export const checkPunchStatus = async () => {
   }
 };
 
-export const punchInOut = async () => {
+export const punchInOut = async ({ latitude, longitude }) => {
   try {
     const response = await fetch(`${baseUrl}/attendance/punchingmachine`, {
-      method: "GET",
+      method: "POST",
       headers: getAuthHeaders(),
+      body: JSON.stringify({ latitude, longitude }),
     });
 
     if (!response.ok) {

@@ -1,4 +1,4 @@
-const baseUrl = import.meta.env.VITE_BASE_URL;
+import { baseUrl, getAuthHeaders } from "./config";
 
 export const loginUser = async (username, password) => {
   try {
@@ -38,4 +38,26 @@ export const registerUser = async (userData) => {
     console.error("Registration error:", error);
     throw error;
   }
+};
+
+export const updateUser = async (data) => {
+  const { id, employeeId, username, dateOfJoining, role, status, locationId } =
+    data;
+  const res = await fetch(`${baseUrl}/user/update/${id}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      employeeId,
+      username,
+      dateOfJoining,
+      role,
+      status,
+      locationId,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || "Failed to update user");
+  }
+  return res.json();
 };
