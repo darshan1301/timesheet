@@ -7,6 +7,7 @@ import {
 } from "../services/attendanceRequest.service";
 import Modal from "../components/Modal";
 import AttendanceRequestForm from "../components/AttendanceRequestForm";
+import Loader from "../components/Loader";
 
 const AttendanceRequests = () => {
   const [requests, setRequests] = useState([]);
@@ -39,11 +40,14 @@ const AttendanceRequests = () => {
 
   const handleStatusUpdate = async (requestId, newStatus) => {
     try {
+      setIsLoading(true);
       await updateAttendanceRequestStatus(requestId, newStatus);
       toast.success(`Request ${newStatus.toLowerCase()} successfully`);
       fetchRequests(); // Refresh the data
     } catch (error) {
       toast.error(error.message || "Failed to update request");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -175,9 +179,7 @@ const AttendanceRequests = () => {
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
-          </div>
+          <Loader />
         ) : (
           <>
             {/* Requests List */}

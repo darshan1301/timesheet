@@ -3,9 +3,9 @@ const express = require("express");
 const morgan = require("morgan"); // Require Morgan
 const { isAuthenticated, authRole } = require("./middleware/authentication.js");
 const prisma = require("./db/prisma-client.js");
+var cors = require("cors");
 const app = express();
 const PORT = process.env.PORT || 5000;
-var cors = require("cors");
 
 app.use(cors());
 

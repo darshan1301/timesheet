@@ -16,7 +16,7 @@ const Layout = ({ children }) => {
         />
         <main
           className={`
-          bg-gray-800 mx-1 p-2 text-white h-full 
+          bg-gray-800 mx-1 xl:mx-2 p-2 text-white h-full 
           xl:col-span-6 col-span-8 overflow-y-auto hide-scrollbars infinite-scroll-container
           ${isOpenSidebar ? "hidden lg:block" : "block"}
         `}>
