@@ -1,6 +1,6 @@
 const moment = require("moment");
 const prisma = require("../db/prisma-client");
-const calculateDistance = require("../utils/calculateDistance");
+const calculateDistance = require("../utils/calculateDistance.js");
 
 const punchInOut = async (req, res) => {
   const { userId } = req.user;

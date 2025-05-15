@@ -13,6 +13,7 @@ import { getAllTasks, deleteTask, updateTask } from "../services/task.service";
 import Modal from "../components/Modal";
 import TaskForm from "../components/TaskForm.jsx";
 import Loader from "../components/Loader.jsx";
+import TaskCard from "../components/TaskCard.jsx";
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -236,69 +237,13 @@ const TaskList = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex flex-col gap-6">
           {tasks.map((task) => (
-            <div
+            <TaskCard
               key={task.id}
-              className={`rounded-xl border p-6 backdrop-blur-sm transition-all duration-300 hover:shadow-lg
-                ${getStatusColor(task.status)}`}>
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="font-semibold text-lg text-white">
-                  {task.title}
-                </h3>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(task.status)}
-                  <span className="text-sm capitalize">
-                    {task.status.toLowerCase()}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-gray-300 mb-4 line-clamp-2">
-                {task.description}
-              </p>
-
-              <div className="flex flex-col gap-2 text-sm text-gray-400">
-                {task.dueDate && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    <span>Due: {formatDate(task.dueDate)}</span>
-                  </div>
-                )}
-                {task.completedAt && (
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Completed: {formatDate(task.completedAt)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
-                <div className="flex gap-2">
-                  <Modal.Open opens="edit-task" taskData={task}>
-                    <button className="p-2 text-gray-400 hover:text-white transition-colors">
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                  </Modal.Open>
-
-                  <Modal.Open opens="delete-task" taskData={task}>
-                    <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </Modal.Open>
-                </div>
-
-                <select
-                  value={task.status}
-                  onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                  className="bg-transparent border border-gray-600 rounded-lg px-3 py-1 text-sm
-                  text-gray-300 focus:outline-none focus:border-gray-500">
-                  <option value="ONGOING">Ongoing</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-              </div>
-            </div>
+              task={task}
+              handleStatusChange={handleStatusChange}
+            />
           ))}
         </div>
 

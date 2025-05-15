@@ -1,4 +1,4 @@
-const prisma = require("../db/prisma-client");
+const prisma = require("../db/prisma-client.js");
 
 const createTask = async (req, res) => {
   const { title, description } = req.body;
