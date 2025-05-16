@@ -1,19 +1,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import {
-  Edit2,
-  Trash2,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Filter,
-  PlusCircle,
-} from "lucide-react";
+import { Filter, PlusCircle } from "lucide-react";
 import { getAllTasks, deleteTask, updateTask } from "../services/task.service";
 import Modal from "../components/Modal";
 import TaskForm from "../components/TaskForm.jsx";
 import Loader from "../components/Loader.jsx";
 import TaskCard from "../components/TaskCard.jsx";
+import useDebounce from "../hooks/useDebounce.js";
 
 const TaskList = () => {
   const [tasks, setTasks] = useState([]);
@@ -24,23 +17,22 @@ const TaskList = () => {
     dueDate: "",
     search: "",
   });
+  const debouncedSearch = useDebounce(filters.search, 500);
 
   useEffect(() => {
     fetchTasks();
-  }, [filters]);
+  }, [filters.status, filters.dueDate, debouncedSearch]);
 
   const fetchTasks = async () => {
     try {
       setIsLoading(true);
-      // In a real application, you'd pass filters to your API
       const data = await getAllTasks();
 
-      // Apply filters client-side (typically this would be done server-side)
       let filteredData = [...data];
 
-      // Filter by search term
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
+      // Search with debouncedSearch value
+      if (debouncedSearch) {
+        const searchTerm = debouncedSearch.toLowerCase();
         filteredData = filteredData.filter(
           (task) =>
             task.title.toLowerCase().includes(searchTerm) ||
@@ -48,14 +40,14 @@ const TaskList = () => {
         );
       }
 
-      // Filter by status
+      // Status filter
       if (filters.status) {
         filteredData = filteredData.filter(
           (task) => task.status === filters.status
         );
       }
 
-      // Filter by due date
+      // Due Date filter
       if (filters.dueDate) {
         const filterDate = new Date(filters.dueDate);
         filterDate.setHours(0, 0, 0, 0);
@@ -115,36 +107,6 @@ const TaskList = () => {
       status: "",
       dueDate: "",
       search: "",
-    });
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return "bg-green-500/10 border-green-500/20 text-green-500";
-      case "CANCELLED":
-        return "bg-red-500/10 border-red-500/20 text-red-500";
-      default:
-        return "bg-blue-500/10 border-blue-500/20 text-blue-500";
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "COMPLETED":
-        return <CheckCircle className="w-5 h-5" />;
-      case "CANCELLED":
-        return <XCircle className="w-5 h-5" />;
-      default:
-        return <Clock className="w-5 h-5" />;
-    }
-  };
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
     });
   };
 
@@ -243,6 +205,9 @@ const TaskList = () => {
               key={task.id}
               task={task}
               handleStatusChange={handleStatusChange}
+              allowDelete
+              allowEdit
+              allowStatusChange
             />
           ))}
         </div>

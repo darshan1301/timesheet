@@ -42,7 +42,13 @@ const formatDate = (date) => {
   });
 };
 
-function TaskCard({ task, handleStatusChange }) {
+function TaskCard({
+  task,
+  handleStatusChange,
+  allowEdit = false,
+  allowDelete = false,
+  allowStatusChange = false,
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleAccordion = () => setIsOpen(!isOpen);
@@ -68,7 +74,7 @@ function TaskCard({ task, handleStatusChange }) {
         </div>
       </div>
 
-      {/* Accordion Content Animated */}
+      {/* Accordion Content */}
       <div
         className={`transition-max-height duration-500 ease-in-out overflow-hidden
           ${isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
@@ -96,31 +102,39 @@ function TaskCard({ task, handleStatusChange }) {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
-          <div className="flex gap-2">
-            <Modal.Open opens="edit-task" taskData={task}>
-              <button className="p-2 text-gray-400 hover:text-white transition-colors">
-                <Edit2 className="w-5 h-5" />
-              </button>
-            </Modal.Open>
+        {(allowEdit || allowDelete || allowStatusChange) && (
+          <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
+            <div className="flex gap-2">
+              {allowEdit && (
+                <Modal.Open opens="edit-task" taskData={task}>
+                  <button className="p-2 text-gray-400 hover:text-white transition-colors">
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                </Modal.Open>
+              )}
 
-            <Modal.Open opens="delete-task" taskData={task}>
-              <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </Modal.Open>
+              {allowDelete && (
+                <Modal.Open opens="delete-task" taskData={task}>
+                  <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </Modal.Open>
+              )}
+            </div>
+
+            {allowStatusChange && handleStatusChange && (
+              <select
+                value={task.status}
+                onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                className="bg-transparent border border-gray-600 rounded-lg px-3 py-1 text-sm
+                text-gray-300 focus:outline-none focus:border-gray-500">
+                <option value="ONGOING">Ongoing</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            )}
           </div>
-
-          <select
-            value={task.status}
-            onChange={(e) => handleStatusChange(task.id, e.target.value)}
-            className="bg-transparent border border-gray-600 rounded-lg px-3 py-1 text-sm
-              text-gray-300 focus:outline-none focus:border-gray-500">
-            <option value="ONGOING">Ongoing</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-        </div>
+        )}
       </div>
     </div>
   );

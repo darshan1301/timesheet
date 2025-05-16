@@ -116,6 +116,9 @@ const getAllTasksForUser = async (req, res) => {
       where: {
         userId: userId,
       },
+      orderBy: {
+        createdAt: "desc", // Order by creation date
+      },
     });
 
     res.status(200).json(tasks);
