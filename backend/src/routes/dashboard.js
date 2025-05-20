@@ -8,6 +8,7 @@ const {
   getUserTasks,
   getAttendanceSheet,
   exportAttendanceSheet,
+  assignTask,
 } = require("../controllers/dashboardController");
 const {
   updateAttendanceRequest,
@@ -24,5 +25,6 @@ router.post("/", createUser);
 router.patch("/:id", updateAttendanceRequest);
 router.get("/attendance/sheet", getAttendanceSheet);
 router.get("/attendance/export", exportAttendanceSheet);
+router.post("/assignTask", assignTask);
 
 module.exports = router;

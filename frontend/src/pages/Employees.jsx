@@ -52,6 +52,13 @@ const Employees = () => {
   if (isLoading) {
     return <Loader />;
   }
+  if (users.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <h1 className="text-2xl font-bold text-white">No Employees Found</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">

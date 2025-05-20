@@ -59,7 +59,7 @@ function Window({ children, name }) {
 
         <div>
           {typeof children === "function"
-            ? children(modalData)
+            ? children(modalData, close)
             : cloneElement(children, { onClose: close })}
         </div>
       </div>

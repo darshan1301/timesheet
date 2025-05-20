@@ -1,9 +1,11 @@
 const prisma = require("../db/prisma-client.js");
 const bcrypt = require("bcryptjs");
+const { sendNotification } = require("../utils/notification.js");
+const { NOTIFICATION_TYPE } = require("../constant.js");
 
-const path = require("path");
-const fs = require("fs");
-const os = require("os");
+// const path = require("path");
+// const fs = require("fs");
+// const os = require("os");
 
 const getUserAttendance = async (req, res) => {
   const userId = req.params.id; // Get userId from route parameters
@@ -444,14 +446,12 @@ const getUserTasks = async (req, res) => {
       where: {
         userId: parseInt(userId),
       },
-      orderBy: [{ status: "asc" }, { dueDate: "asc" }],
+      orderBy: {
+        createdAt: "desc", // Order by creation date
+      },
       include: {
-        user: {
-          select: {
-            username: true,
-            employeeId: true,
-          },
-        },
+        user: { select: { username: true, employeeId: true } },
+        assignedByUser: { select: { username: true } },
       },
     });
 
@@ -679,6 +679,50 @@ const exportAttendanceSheet = async (req, res) => {
   }
 };
 
+const assignTask = async (req, res) => {
+  const { employeeId } = req.body;
+  try {
+    //first check if the user exists
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(employeeId) },
+    });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    // Create the task
+    const newTask = await prisma.task.create({
+      data: {
+        title: req.body.title,
+        description: req.body.description,
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+        status: req.body.status || "PENDING",
+        userId: parseInt(employeeId),
+        assignedBy: req.user.userId,
+      },
+    });
+    // send notification to the user
+    await sendNotification({
+      type: NOTIFICATION_TYPE.Task,
+      targetUserId: parseInt(employeeId),
+      title: "New Task Assigned",
+      message: `${req.user.username} : ${req.body.title}`,
+    });
+
+    res.status(201).json({
+      message: "Task assigned successfully",
+      task: newTask,
+    });
+  } catch (error) {
+    console.error("Error assigning task:", error.message);
+    res.status(500).json({
+      message: "Error assigning task",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   // userUpdate,
   getUserTasks,
@@ -688,4 +732,5 @@ module.exports = {
   createUser,
   getAttendanceSheet,
   exportAttendanceSheet,
+  assignTask,
 };

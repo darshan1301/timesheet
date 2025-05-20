@@ -1,5 +1,7 @@
 import { baseUrl, getAuthHeaders } from "./config";
 
+const headers = getAuthHeaders();
+
 export const getUsers = async (params = {}) => {
   try {
     const queryParams = new URLSearchParams({
@@ -13,7 +15,7 @@ export const getUsers = async (params = {}) => {
     const response = await fetch(
       `${baseUrl}/dashboard/usersList?${queryParams}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
       }
     );
 
@@ -34,7 +36,7 @@ export const getUserAttendance = async (userId) => {
     const response = await fetch(
       `${baseUrl}/attendance/user/${userId}?date=${today}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
       }
     );
 
@@ -63,7 +65,7 @@ export const createEmployee = async (employeeData) => {
 
     const response = await fetch(`${baseUrl}/dashboard`, {
       method: "POST",
-      headers: getAuthHeaders(),
+      headers: headers,
       body: JSON.stringify(employeeData),
     });
 
@@ -85,7 +87,7 @@ export const getEmployeeTasks = async (employeeId) => {
     const response = await fetch(
       `${baseUrl}/dashboard/getTasks/${employeeId}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
       }
     );
 
@@ -114,7 +116,7 @@ export const getAttendanceSheet = async (params = {}) => {
     const response = await fetch(
       `${baseUrl}/dashboard/attendance/sheet?${queryParams.toString()}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
       }
     );
 
@@ -140,7 +142,7 @@ export const exportAttendanceSheet = async (params = {}) => {
     const response = await fetch(
       `${baseUrl}/dashboard/attendance/export?${queryParams.toString()}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
         method: "GET",
         responseType: "blob", // This is important for binary data
       }
@@ -164,6 +166,27 @@ export const exportAttendanceSheet = async (params = {}) => {
     a.remove();
   } catch (error) {
     console.error("Error exporting attendance records:", error);
+    throw error;
+  }
+};
+
+export const assignTask = async (taskData) => {
+  try {
+    const response = await fetch(`${baseUrl}/dashboard/assignTask`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(taskData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to assign task");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error assigning task:", error);
     throw error;
   }
 };

@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ArrowLeft, Filter, PlusCircle } from "lucide-react";
 import { updateTask } from "../services/task.service";
-import { getEmployeeTasks } from "../services/dashboard.service";
+import { assignTask, getEmployeeTasks } from "../services/dashboard.service";
 import { getNameFromEmail } from "../components/Sidebar";
 import Loader from "../components/Loader";
 import Modal from "../components/Modal";
@@ -71,14 +71,26 @@ const EmployeeTasks = () => {
 
       setTasks(filtered);
     } catch (error) {
-      toast.error("Failed to fetch tasks");
+      toast.error("Failed to fetch tasks", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleTaskCreated = (newTask) => {
-    setTasks((prev) => [...prev, newTask]);
+  const handleTaskCreated = async (newTask) => {
+    //append employeeId to newTask
+    newTask.employeeId = employeeId;
+    try {
+      setIsLoading(true);
+      await assignTask(newTask);
+      toast.success("Task assigned successfully!");
+      setTasks((prev) => [newTask, ...prev]);
+    } catch (error) {
+      console.error("Error assigning task:", error);
+      toast.error("Failed to assign task");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
@@ -100,7 +112,7 @@ const EmployeeTasks = () => {
   return (
     <div className="p-6">
       <Modal>
-        <div className="flex justify-between items-center align-middle gap-2 mb-6">
+        <div className="flex lg:flex-row flex-col justify-between items-center align-middle gap-2 mb-6">
           <div className="flex items-center gap-2">
             <Link to="/employees" className="text-gray-400 hover:text-white">
               <ArrowLeft className="w-5 h-5" />
@@ -128,7 +140,8 @@ const EmployeeTasks = () => {
                 />
                 <Modal.Open opens="assign-task">
                   <button className="ml-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 flex items-center gap-2">
-                    <PlusCircle className="w-4 h-4" /> Assign Task
+                    <PlusCircle className="w-4 h-4" />{" "}
+                    <span className="hidden sm:inline">Assign Task</span>
                   </button>
                 </Modal.Open>
               </div>
@@ -149,7 +162,7 @@ const EmployeeTasks = () => {
                 <option value="">All</option>
                 <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="PENDING">Pending</option>
               </select>
             </div>
 
@@ -204,7 +217,10 @@ const EmployeeTasks = () => {
         )}
 
         <Modal.Window name="assign-task">
-          <TaskForm employeeId={employeeId} onTaskCreated={handleTaskCreated} />
+          <TaskForm
+            employeeId={employeeId}
+            onTaskSubmitted={handleTaskCreated}
+          />
         </Modal.Window>
       </Modal>
     </div>

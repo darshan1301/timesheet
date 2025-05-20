@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { AlertCircle } from "lucide-react";
 
-const ConfirmDelete = ({ location, onDelete, onClose }) => (
+const ConfirmDeleteLocation = ({ location, onDelete, onClose }) => (
   <div className="text-center">
     <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
     <h3 className="text-xl font-semibold text-white mb-2">Are you sure?</h3>
@@ -28,4 +28,4 @@ const ConfirmDelete = ({ location, onDelete, onClose }) => (
   </div>
 );
 
-export default ConfirmDelete;
+export default ConfirmDeleteLocation;
