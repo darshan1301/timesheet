@@ -1,9 +1,12 @@
-import { CheckCircle, AlertCircle, Bell, Mail } from "lucide-react";
+import { CheckCircle, AlertCircle, Bell, Mail, Trash2 } from "lucide-react";
 import useGetNotifications from "../hooks/useGetNotifications";
 import Loader from "../components/Loader";
 import { useNavigate } from "react-router-dom";
 import { NOTIFICATION_TYPE } from "../constants";
-import { markNotificationAsRead } from "../services/notification.service";
+import {
+  markNotificationAsRead,
+  deleteNotification,
+} from "../services/notification.service";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -84,6 +87,7 @@ export default function NotificationsPage() {
       queryClient.setQueryData(["notifications"], (old = []) =>
         old.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
       );
+      toast.dismiss();
       switch (notification.type) {
         case NOTIFICATION_TYPE.Task:
           navigate("/task-list");
@@ -98,12 +102,27 @@ export default function NotificationsPage() {
           // Navigate to message page
           break;
         default:
-          // Handle unknown notification type
           console.error("Unknown notification type:", notification.type);
           break;
       }
     } catch (error) {
-      console.error("Error handling notification click:", error);
+      toast.error("Failed to open notification");
+      console.error(error);
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      toast.loading("Deleting notification...");
+      await deleteNotification(id);
+      queryClient.setQueryData(["notifications"], (old = []) =>
+        old.filter((n) => n.id !== id)
+      );
+      toast.dismiss();
+      toast.success("Notification deleted");
+    } catch (error) {
+      toast.error("Failed to delete notification");
+      console.error(error);
     }
   }
 
@@ -127,14 +146,19 @@ export default function NotificationsPage() {
           notifications.map((n) => (
             <div
               key={n.id}
-              className={`flex items-start gap-4 p-4 rounded-lg border bg-slate-900/50 border-slate-700 shadow-md ${
-                n.isRead
-                  ? "opacity-60"
-                  : "opacity-100 hover:opacity-90 transition-opacity"
+              className={`flex items-start gap-4 p-4 rounded-lg border bg-slate-900/50 border-slate-700 shadow-md transition-opacity ${
+                n.isRead ? "opacity-60" : "opacity-100 hover:opacity-90"
               }`}>
               <div className="mt-1">{getIcon(n.type)}</div>
               <div className="flex-1">
-                <div className="font-semibold text-white">{n.title}</div>
+                <div className="font-semibold text-white flex justify-between items-center">
+                  <span>{n.title}</span>
+                  <button
+                    onClick={() => handleDelete(n.id)}
+                    className="text-gray-400 hover:text-red-500 ml-2 p-1 rounded">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
                 <div className="text-sm text-gray-400">{n.message}</div>
                 <div className="text-xs text-gray-500 mt-1">
                   {new Date(n.createdAt).toLocaleString()}

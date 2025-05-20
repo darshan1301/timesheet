@@ -81,7 +81,7 @@ function TaskCard({
       <div
         className={`transition-max-height duration-500 ease-in-out overflow-hidden
           ${isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
-        <p className="text-gray-300 my-4">{task.description}</p>
+        <p className="text-gray-300 my-4 ">{task.description}</p>
 
         {/* Assigned By */}
         {task.assignedByUser?.username ? (

@@ -29,3 +29,16 @@ export const markNotificationAsRead = async (notificationId) => {
 
   return response.json();
 };
+
+export const deleteNotification = async (notificationId) => {
+  const response = await fetch(`${baseUrl}/notifications/${notificationId}`, {
+    method: "DELETE",
+    headers: authHeaders,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete notification");
+  }
+
+  return response.json();
+};
