@@ -21,6 +21,7 @@ import ManageEmployee from "./pages/ManageEmployee";
 import Locations from "./pages/Locations";
 import NotificationsPage from "./pages/NotificationsPage";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import MonthlyAttendanceCalendar from "./pages/AttendanceCalendar";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -115,6 +116,10 @@ const App = () => {
               <Route path="/attendance-sheet" element={<AttendanceSheet />} />
               <Route path="/locations" element={<Locations />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route
+                path="/attendancesheet/:employeeUsername"
+                element={<MonthlyAttendanceCalendar />}
+              />
 
               {/* 404 page for unknown routes under protected layout */}
               <Route path="*" element={<Navigate to="/" replace />} />

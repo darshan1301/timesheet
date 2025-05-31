@@ -30,13 +30,26 @@ export const getUsers = async (params = {}) => {
   }
 };
 
-export const getUserAttendance = async (userId) => {
+export const getUserAttendance = async (employeeUsername, month, year) => {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    // If month or year are omitted or invalid, default to current month/year:
+    const now = new Date();
+    const targetMonth =
+      month && !isNaN(parseInt(month)) && month >= 1 && month <= 12
+        ? month
+        : now.getMonth() + 1; // JS months are 0-based, but our API expects 1-based
+    const targetYear =
+      year && !isNaN(parseInt(year)) ? year : now.getFullYear();
+
+    // Build query string: ?month=MM&year=YYYY
+    const query = `?month=${targetMonth}&year=${targetYear}`;
+
     const response = await fetch(
-      `${baseUrl}/attendance/user/${userId}?date=${today}`,
+      `${baseUrl}/dashboard/getUserAttendance/${encodeURIComponent(
+        employeeUsername
+      )}${query}`,
       {
-        headers: headers,
+        headers,
       }
     );
 
@@ -44,7 +57,7 @@ export const getUserAttendance = async (userId) => {
       throw new Error("Failed to fetch attendance");
     }
 
-    return response.json();
+    return await response.json();
   } catch (error) {
     console.error("Error fetching attendance:", error);
     throw error;

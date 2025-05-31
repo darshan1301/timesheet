@@ -81,3 +81,4 @@ temp/
 .vercel
 .serverless
 gitguide.md
+Dockerfile

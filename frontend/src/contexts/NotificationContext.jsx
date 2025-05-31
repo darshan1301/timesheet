@@ -5,11 +5,11 @@ import { wsUrl } from "../services/config";
 import { getIcon } from "../pages/NotificationsPage";
 import { useQueryClient } from "@tanstack/react-query";
 import { Howl } from "howler";
-import bellSound from "../assets/sounds/notification.wav";
+import bellSound from "../assets/sounds/notification-2.mp3";
 
 const notificationSound = new Howl({
   src: [bellSound],
-  volume: 0.9,
+  volume: 1,
   preload: true,
 });
 
