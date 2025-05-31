@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { Filter, PlusCircle } from "lucide-react";
-import { getAllTasks, deleteTask, updateTask } from "../services/task.service";
+import {
+  getAllTasks,
+  deleteTask,
+  updateTask,
+  createTask,
+} from "../services/task.service";
 import Modal from "../components/Modal";
 import TaskForm from "../components/TaskForm.jsx";
 import Loader from "../components/Loader.jsx";
@@ -63,42 +68,60 @@ const TaskList = () => {
       setTasks(filteredData);
     } catch (error) {
       toast.error("Failed to fetch tasks");
+      console.error("Error fetching tasks:", error);
     } finally {
+      toast.dismiss();
       setIsLoading(false);
     }
   };
 
-  const handleTaskCreated = (newTask) => {
-    setTasks((prev) => [...prev, newTask]);
+  const handleTaskCreated = async (newTask) => {
+    const toastId = toast.loading("Creating task...");
+    try {
+      const res = await createTask(newTask);
+      toast.dismiss(toastId);
+      toast.success("Task created successfully");
+      setTasks((prev) => [res, ...prev]);
+    } catch (error) {
+      toast.error("Failed to create task");
+      console.error("Error creating task:", error);
+    }
   };
 
   const handleDelete = async (taskId) => {
+    const toastId = toast.loading("Deleting task...");
     try {
       await deleteTask(taskId);
       setTasks(tasks.filter((task) => task.id !== taskId));
+      toast.dismiss(toastId);
       toast.success("Task deleted successfully");
     } catch (error) {
-      toast.error("Failed to delete task");
+      toast.error("Failed to delete task", error);
     }
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
+    const toastId = toast.loading("Updating task...");
     try {
       const updatedTask = await updateTask(taskId, { status: newStatus });
       setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
+      toast.dismiss(toastId);
       toast.success("Status updated successfully");
     } catch (error) {
-      toast.error("Failed to update status");
+      toast.error("Failed to update status", error);
     }
   };
 
   const handleTaskUpdate = async (taskId, updatedData) => {
     try {
+      toast.loading("Updating task...");
       const updatedTask = await updateTask(taskId, updatedData);
       setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)));
-      toast.success("Task updated successfully");
+      toast.dismiss();
+      toast.success("Task updated successfully!");
     } catch (error) {
       toast.error("Failed to update task");
+      console.error("Error updating task:", error);
     }
   };
 
@@ -170,7 +193,7 @@ const TaskList = () => {
                 <option value="">All Statuses</option>
                 <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
-                <option value="PENDING">PENDING</option>
+                <option value="PENDING">Pending</option>
               </select>
             </div>
 
@@ -201,14 +224,16 @@ const TaskList = () => {
 
         <div className="flex flex-col gap-6">
           {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              handleStatusChange={handleStatusChange}
-              allowDelete
-              allowEdit
-              allowStatusChange
-            />
+            <div key={task.id}>
+              <TaskCard
+                key={task.id}
+                task={task}
+                handleStatusChange={handleStatusChange}
+                allowDelete
+                allowEdit
+                allowStatusChange
+              />
+            </div>
           ))}
         </div>
 
@@ -217,24 +242,18 @@ const TaskList = () => {
             <p>No tasks found</p>
           </div>
         )}
-
-        {/* Create Task Modal */}
-        <Modal.Window name="create-task">
-          <TaskForm onTaskCreated={handleTaskCreated} />
-        </Modal.Window>
-
-        {/* Edit Task Modal */}
         <Modal.Window name="edit-task">
           {(modalData, onClose) => (
             <TaskForm
               initialData={modalData}
               onClose={onClose}
-              onTaskCreated={(updatedTask) => {
-                handleTaskUpdate(modalData.id, updatedTask);
-                onClose();
-              }}
+              onTaskSubmitted={handleTaskUpdate}
             />
           )}
+        </Modal.Window>
+        {/* Create Task Modal */}
+        <Modal.Window name="create-task">
+          <TaskForm onTaskSubmitted={handleTaskCreated} />
         </Modal.Window>
 
         {/* Delete Confirmation Modal */}

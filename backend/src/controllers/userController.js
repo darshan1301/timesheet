@@ -15,7 +15,9 @@ const userLogin = async (req, res) => {
     if (!user) {
       return res
         .status(404)
-        .send("User not found. Please check your username and try again.");
+        .json({
+          message: "User not found. Please check your username and try again.",
+        });
     }
 
     // Compare the entered password with the stored hashed password

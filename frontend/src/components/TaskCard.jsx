@@ -4,11 +4,11 @@ import {
   Clock,
   CheckCircle,
   Calendar,
-  XCircle,
   Edit2,
   Trash2,
   ChevronUp,
   ChevronDown,
+  AlertCircle,
 } from "lucide-react";
 import Modal from "./Modal";
 
@@ -16,10 +16,12 @@ const getStatusColor = (status) => {
   switch (status) {
     case "COMPLETED":
       return "bg-green-500/10 border-green-500/20 text-green-500";
-    case "CANCELLED":
-      return "bg-red-500/10 border-red-500/20 text-red-500";
-    default:
+    case "PENDING":
+      return "bg-yellow-500/10 border-yellow-500/20 text-yellow-500";
+    case "ONGOING":
       return "bg-blue-500/10 border-blue-500/20 text-blue-500";
+    default:
+      return "bg-gray-500/10 border-gray-500/20 text-gray-500";
   }
 };
 
@@ -27,8 +29,10 @@ const getStatusIcon = (status) => {
   switch (status) {
     case "COMPLETED":
       return <CheckCircle className="w-5 h-5" />;
-    case "CANCELLED":
-      return <XCircle className="w-5 h-5" />;
+    case "PENDING":
+      return <AlertCircle className="w-5 h-5" />;
+    case "ONGOING":
+      return <Clock className="w-5 h-5" />;
     default:
       return <Clock className="w-5 h-5" />;
   }
@@ -50,7 +54,6 @@ function TaskCard({
   allowStatusChange = false,
 }) {
   const [isOpen, setIsOpen] = useState(false);
-
   const toggleAccordion = () => setIsOpen(!isOpen);
 
   return (
@@ -61,14 +64,14 @@ function TaskCard({
       <div
         className="flex justify-between items-center cursor-pointer"
         onClick={toggleAccordion}>
-        <div>
+        <div className="flex flex-col">
           <h3 className="font-semibold text-lg text-white">{task.title}</h3>
-          <span className="text-xs text-gray-400">
-            {task.status.toLowerCase()}
-          </span>
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">
+            {task.status.toLowerCase()}
+          </span>
           {getStatusIcon(task.status)}
           {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
@@ -78,7 +81,20 @@ function TaskCard({
       <div
         className={`transition-max-height duration-500 ease-in-out overflow-hidden
           ${isOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
-        <p className="text-gray-300 my-4">{task.description}</p>
+        <p className="text-gray-300 my-4 ">{task.description}</p>
+
+        {/* Assigned By */}
+        {task.assignedByUser?.username ? (
+          <div className="mb-4 text-sm text-gray-400">
+            <span className="font-medium text-white">Assigned By: </span>
+            <span>{task.assignedByUser.username}</span>
+          </div>
+        ) : (
+          <div className="mb-4 text-sm text-gray-400">
+            <span className="font-medium text-white">Assigned By: </span>
+            <span>SELF</span>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2 text-sm text-gray-400">
           <div className="flex items-center gap-2">
@@ -93,10 +109,10 @@ function TaskCard({
             </div>
           )}
 
-          {task.completedAt && (
+          {task.status == "COMPLETED" && (
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>Completed: {formatDate(task.completedAt)}</span>
+              <span>Completed: {formatDate(task.updatedAt)}</span>
             </div>
           )}
         </div>
@@ -130,7 +146,7 @@ function TaskCard({
                 text-gray-300 focus:outline-none focus:border-gray-500">
                 <option value="ONGOING">Ongoing</option>
                 <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="PENDING">Pending</option>
               </select>
             )}
           </div>

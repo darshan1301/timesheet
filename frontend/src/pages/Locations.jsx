@@ -18,7 +18,7 @@ import {
 } from "../services/location.service";
 import LocationFormFields from "../components/LocationFormFields";
 import Modal from "../components/Modal";
-import ConfirmDelete from "../components/ConfirmDelete";
+import ConfirmDeleteLocation from "../components/ConfirmDeleteLocation";
 
 const LocationsPage = () => {
   const [locations, setLocations] = useState([]);
@@ -74,11 +74,11 @@ const LocationsPage = () => {
       return;
     }
 
-    const updatedLocation = {
-      id: data.id,
-      name,
-      locationUrl,
-    };
+    // const updatedLocation = {
+    //   id: data.id,
+    //   name,
+    //   locationUrl,
+    // };
 
     try {
       await updateLocation(data);
@@ -97,6 +97,7 @@ const LocationsPage = () => {
     try {
       await deleteLocation(locationId);
       setLocations((prev) => prev.filter((loc) => loc.id !== locationId));
+      toast.dismiss();
       toast.success("Location deleted successfully!");
     } catch (err) {
       toast.error("Failed to delete location");
@@ -115,7 +116,7 @@ const LocationsPage = () => {
 
         {/* Search and Add Button */}
         <Modal>
-          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div className="flex flex sm:flex-row gap-3 w-full md:w-auto">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -205,7 +206,7 @@ const LocationsPage = () => {
                       />
                     </Modal.Window>
                     <Modal.Window name="delete-location">
-                      <ConfirmDelete
+                      <ConfirmDeleteLocation
                         onDelete={handleDeleteSubmit}
                         location={location}
                       />

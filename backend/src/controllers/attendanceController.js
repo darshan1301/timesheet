@@ -245,23 +245,19 @@ const createAttendanceRequest = async (req, res) => {
 };
 
 const updateAttendanceRequest = async (req, res) => {
-  const requestId = req.params.id;
+  const requestId = parseInt(req.params.id, 10);
   const { status } = req.body;
   const { userId } = req.user;
 
   try {
-    // 1. Validate inputs
+    // 1. Validate status
     if (!["ACCEPT", "REJECT"].includes(status)) {
       return res
         .status(400)
         .json({ message: "Invalid status. Use 'ACCEPT' or 'REJECT'." });
     }
-    if (!requestId || isNaN(parseInt(requestId))) {
-      return res.status(400).json({ message: "Invalid request ID" });
-    }
-    const parsedRequestId = parseInt(requestId, 10);
 
-    // 2. Only ADMIN or HR can approve/reject
+    // 2. Only ADMIN or HR
     const adminOrHR = await prisma.user.findUnique({
       where: { id: parseInt(userId, 10) },
       select: { role: true },
@@ -273,9 +269,9 @@ const updateAttendanceRequest = async (req, res) => {
       });
     }
 
-    // 3. Fetch the attendance request
+    // 3. Load the attendance request
     const attendanceRequest = await prisma.requestForAttendance.findUnique({
-      where: { id: parsedRequestId },
+      where: { id: requestId },
     });
     if (!attendanceRequest) {
       return res.status(404).json({ message: "Attendance request not found." });
@@ -283,19 +279,41 @@ const updateAttendanceRequest = async (req, res) => {
 
     // 4. Update its status
     const updatedRequest = await prisma.requestForAttendance.update({
-      where: { id: parsedRequestId },
+      where: { id: requestId },
       data: { status },
     });
+    console.log("Updated request:", updatedRequest);
 
-    // 5. If approved, upsert into Attendance
+    // 5. If approved, upsert into Attendance on the same IST date
     if (status === "ACCEPT") {
-      // look for existing attendance on that date for the user
+      // parse the request.date as UTC, then shift to IST
+      const reqUtc = moment.utc(attendanceRequest.date);
+      const reqIst = reqUtc.clone().utcOffset(330); // +5:30 in minutes
+
+      // compute the UTC-window corresponding to that IST calendar-day
+      const dayStartUtc = reqIst
+        .clone()
+        .startOf("day")
+        .subtract(330, "minutes")
+        .toDate();
+      const dayEndUtc = reqIst
+        .clone()
+        .endOf("day")
+        .subtract(330, "minutes")
+        .toDate();
+
+      // find any existing attendance in that IST day
       const existing = await prisma.attendance.findFirst({
         where: {
           userId: attendanceRequest.userId,
-          date: attendanceRequest.date,
+          date: {
+            gte: dayStartUtc,
+            lte: dayEndUtc,
+          },
         },
       });
+
+      console.log("Existing attendance:", existing);
 
       if (existing) {
         // update punch times
@@ -307,7 +325,7 @@ const updateAttendanceRequest = async (req, res) => {
           },
         });
       } else {
-        // create a new attendance record
+        // create a new record
         await prisma.attendance.create({
           data: {
             userId: attendanceRequest.userId,
@@ -319,14 +337,16 @@ const updateAttendanceRequest = async (req, res) => {
       }
     }
 
-    // 6. Send back the result
-    res.status(200).json({
+    // 6. Respond
+    return res.status(200).json({
       message: `Attendance request has been ${status.toLowerCase()}.`,
       request: updatedRequest,
     });
   } catch (error) {
     console.error("Error updating attendance request:", error);
-    res.status(500).json({ message: "Error updating attendance request." });
+    return res
+      .status(500)
+      .json({ message: "Error updating attendance request." });
   }
 };
 

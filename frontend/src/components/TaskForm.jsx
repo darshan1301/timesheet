@@ -3,15 +3,19 @@ import { useState, useEffect } from "react";
 import { createTask, updateTask } from "../services/task.service";
 import { toast } from "react-hot-toast";
 
-const TaskForm = ({ onClose, onTaskSubmitted, initialData = null }) => {
+const TaskForm = ({
+  onClose,
+  initialData = null,
+  onTaskSubmitted = () => {},
+}) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     dueDate: "",
-    status: "ONGOING",
+    status: "PENDING",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize form with initial data if provided (edit mode)
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -34,22 +38,23 @@ const TaskForm = ({ onClose, onTaskSubmitted, initialData = null }) => {
   };
 
   const handleSubmit = async (e) => {
+    setIsLoading(true);
     e.preventDefault();
+
     try {
       let response;
       if (initialData) {
-        response = await updateTask(initialData.id, formData);
-        toast.success("Task updated successfully");
+        response = await onTaskSubmitted(initialData.id, formData);
       } else {
-        response = await createTask(formData);
-        toast.success("Task created successfully");
+        response = await onTaskSubmitted(formData);
       }
-      onTaskSubmitted?.(response);
       onClose();
     } catch (error) {
       toast.error(
         initialData ? "Failed to update task" : "Failed to create task"
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -129,7 +134,7 @@ const TaskForm = ({ onClose, onTaskSubmitted, initialData = null }) => {
                 focus:border-transparent">
               <option value="ONGOING">Ongoing</option>
               <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="PENDING">Pending</option>
             </select>
           </div>
         )}
@@ -144,6 +149,7 @@ const TaskForm = ({ onClose, onTaskSubmitted, initialData = null }) => {
             Cancel
           </button>
           <button
+            disabled={isLoading}
             type="submit"
             className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg 
               hover:bg-emerald-600 transition-colors">

@@ -19,11 +19,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import ManageEmployee from "./pages/ManageEmployee";
 import Locations from "./pages/Locations";
+import NotificationsPage from "./pages/NotificationsPage";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import MonthlyAttendanceCalendar from "./pages/AttendanceCalendar";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, //seconds
+      staleTime: 1 * 1000, //seconds
     },
   },
 });
@@ -31,88 +34,102 @@ const queryClient = new QueryClient({
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ReactQueryDevtools initialIsOpen={false} />
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          // Default options for all toasts
-          duration: 2000,
-          style: {
-            background: "#363636",
-            color: "#fff",
-          },
-          // Success toast options
-          success: {
-            duration: 3000,
+      <NotificationProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            // Default options for all toasts
+            duration: 2000,
             style: {
-              background: "#1f2937",
-              color: "#4aed88",
+              background: "#363636",
+              color: "#fff",
             },
-          },
-          // Error toast options
-          error: {
-            duration: 4000,
-            style: {
-              background: "#1f2937",
-              color: "white",
+            // Success toast options
+            success: {
+              duration: 3000,
+              style: {
+                background: "#1f2937",
+                color: "#4aed88",
+              },
             },
-          },
-        }}
-      />
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <Login />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicRoute>
-                <Signup />
-              </PublicRoute>
-            }
-          />
-
-          {/* Protected Routes with Layout */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }>
-            <Route index element={<Home />} />
+            // Error toast options
+            error: {
+              duration: 4000,
+              style: {
+                background: "#1f2937",
+                color: "white",
+              },
+            },
+            loading: {
+              duration: 3000,
+              style: {
+                background: "#1f2937",
+                color: "white",
+              },
+            },
+          }}
+        />
+        <Router>
+          <Routes>
+            {/* Public Routes */}
             <Route
-              path="/attendance-requests"
-              element={<AttendanceRequests />}
+              path="/login"
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
             />
             <Route
-              path="/employee-tasks/:employeeId"
-              element={<EmployeeTasks />}
+              path="/signup"
+              element={
+                <PublicRoute>
+                  <Signup />
+                </PublicRoute>
+              }
             />
+
+            {/* Protected Routes with Layout */}
             <Route
-              path="/manage-employee/:employeeId"
-              element={<ManageEmployee />}
-            />
-            <Route path="/task-list" element={<TaskList />} />
-            <Route path="/employees" element={<Employees />} />
-            <Route path="/attendance-sheet" element={<AttendanceSheet />} />
-            <Route path="/locations" element={<Locations />} />
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
+              <Route index element={<Home />} />
+              <Route
+                path="/attendance-requests"
+                element={<AttendanceRequests />}
+              />
+              <Route
+                path="/employee-tasks/:employeeId"
+                element={<EmployeeTasks />}
+              />
+              <Route
+                path="/manage-employee/:employeeId"
+                element={<ManageEmployee />}
+              />
+              <Route path="/task-list" element={<TaskList />} />
+              <Route path="/employees" element={<Employees />} />
+              <Route path="/attendance-sheet" element={<AttendanceSheet />} />
+              <Route path="/locations" element={<Locations />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route
+                path="/attendancesheet/:employeeUsername"
+                element={<MonthlyAttendanceCalendar />}
+              />
 
-            {/* 404 page for unknown routes under protected layout */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
+              {/* 404 page for unknown routes under protected layout */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
 
-          {/* Catch all other routes and redirect to login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
+            {/* Catch all other routes and redirect to login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </QueryClientProvider>
   );
 };

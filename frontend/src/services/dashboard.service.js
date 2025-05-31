@@ -1,5 +1,7 @@
 import { baseUrl, getAuthHeaders } from "./config";
 
+const headers = getAuthHeaders();
+
 export const getUsers = async (params = {}) => {
   try {
     const queryParams = new URLSearchParams({
@@ -13,7 +15,7 @@ export const getUsers = async (params = {}) => {
     const response = await fetch(
       `${baseUrl}/dashboard/usersList?${queryParams}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
       }
     );
 
@@ -28,13 +30,26 @@ export const getUsers = async (params = {}) => {
   }
 };
 
-export const getUserAttendance = async (userId) => {
+export const getUserAttendance = async (employeeUsername, month, year) => {
   try {
-    const today = new Date().toISOString().split("T")[0];
+    // If month or year are omitted or invalid, default to current month/year:
+    const now = new Date();
+    const targetMonth =
+      month && !isNaN(parseInt(month)) && month >= 1 && month <= 12
+        ? month
+        : now.getMonth() + 1; // JS months are 0-based, but our API expects 1-based
+    const targetYear =
+      year && !isNaN(parseInt(year)) ? year : now.getFullYear();
+
+    // Build query string: ?month=MM&year=YYYY
+    const query = `?month=${targetMonth}&year=${targetYear}`;
+
     const response = await fetch(
-      `${baseUrl}/attendance/user/${userId}?date=${today}`,
+      `${baseUrl}/dashboard/getUserAttendance/${encodeURIComponent(
+        employeeUsername
+      )}${query}`,
       {
-        headers: getAuthHeaders(),
+        headers,
       }
     );
 
@@ -42,7 +57,7 @@ export const getUserAttendance = async (userId) => {
       throw new Error("Failed to fetch attendance");
     }
 
-    return response.json();
+    return await response.json();
   } catch (error) {
     console.error("Error fetching attendance:", error);
     throw error;
@@ -63,7 +78,7 @@ export const createEmployee = async (employeeData) => {
 
     const response = await fetch(`${baseUrl}/dashboard`, {
       method: "POST",
-      headers: getAuthHeaders(),
+      headers: headers,
       body: JSON.stringify(employeeData),
     });
 
@@ -85,7 +100,7 @@ export const getEmployeeTasks = async (employeeId) => {
     const response = await fetch(
       `${baseUrl}/dashboard/getTasks/${employeeId}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
       }
     );
 
@@ -114,7 +129,7 @@ export const getAttendanceSheet = async (params = {}) => {
     const response = await fetch(
       `${baseUrl}/dashboard/attendance/sheet?${queryParams.toString()}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
       }
     );
 
@@ -140,7 +155,7 @@ export const exportAttendanceSheet = async (params = {}) => {
     const response = await fetch(
       `${baseUrl}/dashboard/attendance/export?${queryParams.toString()}`,
       {
-        headers: getAuthHeaders(),
+        headers: headers,
         method: "GET",
         responseType: "blob", // This is important for binary data
       }
@@ -164,6 +179,27 @@ export const exportAttendanceSheet = async (params = {}) => {
     a.remove();
   } catch (error) {
     console.error("Error exporting attendance records:", error);
+    throw error;
+  }
+};
+
+export const assignTask = async (taskData) => {
+  try {
+    const response = await fetch(`${baseUrl}/dashboard/assignTask`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(taskData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to assign task");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error assigning task:", error);
     throw error;
   }
 };

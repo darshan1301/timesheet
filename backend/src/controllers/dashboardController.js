@@ -1,30 +1,44 @@
 const prisma = require("../db/prisma-client.js");
 const bcrypt = require("bcryptjs");
+const { sendNotification } = require("../utils/notification.js");
+const { NOTIFICATION_TYPE } = require("../constant.js");
 
-const path = require("path");
-const fs = require("fs");
-const os = require("os");
+// const path = require("path");
+// const fs = require("fs");
+// const os = require("os");
 
 const getUserAttendance = async (req, res) => {
-  const userId = req.params.id; // Get userId from route parameters
+  // Now expect `employeeUsername` in route (e.g. /api/attendance/:employeeUsername)
+  const { employeeUsername } = req.params;
+  const { month, year } = req.query;
 
   try {
-    // Validate userId
-    if (!userId || isNaN(parseInt(userId))) {
-      return res.status(400).json({
-        message: "Invalid user ID provided",
-      });
+    // 1. Validate employeeUsername
+    if (!employeeUsername || typeof employeeUsername !== "string") {
+      return res.status(400).json({ message: "Invalid username provided" });
     }
 
-    // Get the current date (ignoring time)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 2. Determine target month/year from query or default to current
+    const now = new Date();
+    const targetYear =
+      year && !isNaN(parseInt(year)) ? parseInt(year) : now.getFullYear();
+    const targetMonth =
+      month &&
+      !isNaN(parseInt(month)) &&
+      parseInt(month) >= 1 &&
+      parseInt(month) <= 12
+        ? parseInt(month) - 1 // JS Date month is 0-based
+        : now.getMonth();
 
-    // Fetch specific user with their attendance
+    // 3. Build date range for that entire month
+    const startOfMonth = new Date(targetYear, targetMonth, 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const startOfNextMonth = new Date(targetYear, targetMonth + 1, 1);
+    startOfNextMonth.setHours(0, 0, 0, 0);
+
+    // 4. Fetch specific user by username with attendances in that month
     const userWithAttendance = await prisma.user.findUnique({
-      where: {
-        id: parseInt(userId),
-      },
+      where: { username: employeeUsername },
       select: {
         id: true,
         employeeId: true,
@@ -34,8 +48,8 @@ const getUserAttendance = async (req, res) => {
         attendances: {
           where: {
             date: {
-              gte: today,
-              lt: new Date(today.getTime() + 86400000), // 24 hours from today
+              gte: startOfMonth,
+              lt: startOfNextMonth,
             },
           },
           select: {
@@ -43,23 +57,40 @@ const getUserAttendance = async (req, res) => {
             punchIn: true,
             punchOut: true,
             date: true,
+            // optionally compute hours if you store only punch times:
+            // hours: true
           },
+          orderBy: { date: "asc" },
         },
       },
     });
 
     if (!userWithAttendance) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({
-      user: userWithAttendance,
+    // 5. Format the attendance dates as YYYY-MM-DD strings (if needed)
+    const formattedAttendances = userWithAttendance.attendances.map((att) => ({
+      id: att.id,
+      punchIn: att.punchIn,
+      punchOut: att.punchOut,
+      date: att.date.toISOString().split("T")[0],
+    }));
+
+    // 6. Return a JSON shape matching frontend expectations
+    return res.status(200).json({
+      userId: userWithAttendance.id,
+      employeeId: userWithAttendance.employeeId,
+      username: userWithAttendance.username,
+      role: userWithAttendance.role,
+      status: userWithAttendance.status,
+      month: targetMonth + 1, // return 1-based month
+      year: targetYear,
+      attendances: formattedAttendances,
     });
   } catch (error) {
     console.error("Error fetching user attendance:", error.message);
-    res.status(500).json({
+    return res.status(500).json({
       message: "Error fetching user attendance records",
       error: error.message,
     });
@@ -254,7 +285,6 @@ const getUsersList = async (req, res) => {
   }
 };
 
-// For getting a single user's details
 const getUserDetails = async (req, res) => {
   const { id } = req.params;
   const requestingUser = req.user;
@@ -409,7 +439,6 @@ const createUser = async (req, res) => {
   }
 };
 
-// In your task controller (backend)
 const getUserTasks = async (req, res) => {
   const userId = req.params.employeeId;
   const requestingUser = req.user;
@@ -444,14 +473,12 @@ const getUserTasks = async (req, res) => {
       where: {
         userId: parseInt(userId),
       },
-      orderBy: [{ status: "asc" }, { dueDate: "asc" }],
+      orderBy: {
+        createdAt: "desc", // Order by creation date
+      },
       include: {
-        user: {
-          select: {
-            username: true,
-            employeeId: true,
-          },
-        },
+        user: { select: { username: true, employeeId: true } },
+        assignedByUser: { select: { username: true } },
       },
     });
 
@@ -542,7 +569,6 @@ const getAttendanceSheet = async (req, res) => {
   }
 };
 
-// In your attendanceController.js
 const exportAttendanceSheet = async (req, res) => {
   const { startDate, endDate, employeeId } = req.query;
   const requestingUser = req.user;
@@ -679,6 +705,50 @@ const exportAttendanceSheet = async (req, res) => {
   }
 };
 
+const assignTask = async (req, res) => {
+  const { employeeId } = req.body;
+  try {
+    //first check if the user exists
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(employeeId) },
+    });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    // Create the task
+    const newTask = await prisma.task.create({
+      data: {
+        title: req.body.title,
+        description: req.body.description,
+        dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+        status: req.body.status || "PENDING",
+        userId: parseInt(employeeId),
+        assignedBy: req.user.userId,
+      },
+    });
+    // send notification to the user
+    await sendNotification({
+      type: NOTIFICATION_TYPE.Task,
+      targetUserId: parseInt(employeeId),
+      title: "New Task Assigned",
+      message: `${req.user.username} : ${req.body.title}`,
+    });
+
+    res.status(201).json({
+      message: "Task assigned successfully",
+      task: newTask,
+    });
+  } catch (error) {
+    console.error("Error assigning task:", error.message);
+    res.status(500).json({
+      message: "Error assigning task",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   // userUpdate,
   getUserTasks,
@@ -688,4 +758,5 @@ module.exports = {
   createUser,
   getAttendanceSheet,
   exportAttendanceSheet,
+  assignTask,
 };

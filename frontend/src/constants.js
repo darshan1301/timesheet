@@ -39,3 +39,10 @@ export const navbarItems = [
     roles: ["HR", "ADMIN"],
   },
 ];
+
+export const NOTIFICATION_TYPE = {
+  Message: "MESSAGE",
+  Task: "TASK",
+  AttendanceRequest: "ATTENDANCE_REQUEST",
+  Announcement: "ANNOUNCEMENT",
+};

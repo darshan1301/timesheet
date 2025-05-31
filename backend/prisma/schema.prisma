@@ -30,6 +30,14 @@ enum UserStatus {
   BANNED
 }
 
+enum NotificationType {
+  TASK
+  ATTENDANCE_REQUEST
+  ANNOUNCEMENT
+  MESSAGE // Reserve for future personal messages
+}
+
+
 model User {
   id             Int       @id @default(autoincrement())
   employeeId     String    @unique
@@ -45,6 +53,8 @@ model User {
   tasks          Task[]
   attendances    Attendance[]
   attendanceRequests RequestForAttendance[]
+  notifications  Notification[]
+  assignedTasks  Task[] @relation("AssignedTasks")
 }
 
 model Task {
@@ -59,6 +69,8 @@ model Task {
   updatedAt   DateTime    @default(now())  // Add default value
   completedAt DateTime?
   dueDate     DateTime?
+  assignedBy Int?
+  assignedByUser User? @relation("AssignedTasks", fields: [assignedBy], references: [id], onDelete: Cascade)
 }
 
 model Attendance {
@@ -91,4 +103,16 @@ model Location {
 
   user User[]
   attendance Attendance[]
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  type      NotificationType
+  title     String
+  message   String?
+  isRead    Boolean           @default(false)
+  userId    Int
+  createdAt DateTime          @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

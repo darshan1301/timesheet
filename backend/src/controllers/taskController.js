@@ -1,7 +1,7 @@
 const prisma = require("../db/prisma-client.js");
 
 const createTask = async (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, dueDate } = req.body;
   const { userId } = req.user;
 
   try {
@@ -12,6 +12,10 @@ const createTask = async (req, res) => {
         description: description,
         userId: userId, // Associate task with the user
         status: "PENDING",
+        //put optional fields here
+        // e.g. dueDate: new Date("2023-10-01"),
+        dueDate: dueDate ? new Date(dueDate) : null,
+        assignedBy: null,
       },
     });
 
@@ -24,7 +28,7 @@ const createTask = async (req, res) => {
 };
 
 const updateTask = async (req, res) => {
-  const { status, description } = req.body;
+  const { status, description, title } = req.body;
   const { taskId } = req.params;
   const userId = req.user.userId; // Logged-in user ID
 
@@ -49,6 +53,7 @@ const updateTask = async (req, res) => {
     const updatedData = {};
     if (status) updatedData.status = status;
     if (description) updatedData.description = description;
+    if (title) updatedData.title = title;
 
     // Update the task
     const updatedTask = await prisma.task.update({
@@ -111,13 +116,18 @@ const getAllTasksForUser = async (req, res) => {
       return res.status(404).send("User not found.");
     }
 
-    // Fetch all tasks associated with the user
+    // Fetch all tasks associated with the user and also mention if the task is self assigned or somebody else assigned and if somebody else assigned then mention the name of the person who assigned it
     const tasks = await prisma.task.findMany({
       where: {
         userId: userId,
       },
       orderBy: {
         createdAt: "desc", // Order by creation date
+      },
+      include: {
+        assignedByUser: {
+          select: { username: true },
+        },
       },
     });
 

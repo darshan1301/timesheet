@@ -7,16 +7,15 @@ import { useEffect, useRef, useState } from "react";
 import useGetUser from "../hooks/useGetUser";
 import { useMemo } from "react";
 import { navbarItems } from "../constants.js";
+import { useQueryClient } from "@tanstack/react-query";
+import useGetNotifications from "../hooks/useGetNotifications.js";
 
 export function getNameFromEmail(email) {
   if (!email || typeof email !== "string") return "";
 
-  // Remove domain part (everything after @)
   const username = email.split("@")[0];
 
-  // Handle dot-separated usernames (like "first.last@example.com")
   if (username.includes(".")) {
-    // Split by dots and capitalize each part
     return username
       .split(".")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -34,6 +33,8 @@ const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationPathRef = useRef(location.pathname);
+  const queryClient = useQueryClient();
+  const { notifications = [] } = useGetNotifications();
 
   const role = userinfo?.user?.role;
   const menuItems = useMemo(
@@ -52,6 +53,8 @@ const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
   }, [location.pathname, setIsOpenSidebar, isOpenSidebar]);
 
   function handleLogout() {
+    queryClient.clear();
+    localStorage.removeItem("REACT_QUERY_OFFLINE_CACHE");
     clearToken();
     toast("Logged Out.");
     navigate("/login");
@@ -81,6 +84,29 @@ const Sidebar = ({ isOpenSidebar, setIsOpenSidebar }) => {
             <span className="tracking-wide">{item.label}</span>
           </Link>
         ))}
+        <Link
+          to={"/notifications"}
+          className="relative flex items-center gap-4 lg:mx-4 px-4 py-3 rounded-md 
+    transition-all duration-200 ease-in-out
+    bg-slate-900
+    hover:bg-slate-700 border border-slate-700
+    text-stone-300 hover:text-white font-medium text-sm">
+          <img
+            src={
+              "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWJlbGwtaWNvbiBsdWNpZGUtYmVsbCI+PHBhdGggZD0iTTEwLjI2OCAyMWEyIDIgMCAwIDAgMy40NjQgMCIvPjxwYXRoIGQ9Ik0zLjI2MiAxNS4zMjZBMSAxIDAgMCAwIDQgMTdoMTZhMSAxIDAgMCAwIC43NC0xLjY3M0MxOS40MSAxMy45NTYgMTggMTIuNDk5IDE4IDhBNiA2IDAgMCAwIDYgOGMwIDQuNDk5LTEuNDExIDUuOTU2LTIuNzM4IDcuMzI2Ii8+PC9zdmc+"
+            }
+            alt={"Notifications"}
+            className="w-5 h-5 opacity-75 group-hover:opacity-100 [filter:brightness(0)_invert(1)]"
+          />
+
+          <span className="tracking-wide">Notifications</span>
+
+          {notifications.filter((n) => !n.isRead).length > 0 && (
+            <span className=" bg-green-500 right-4 absolute text-black text-sm font-bold rounded-full px-1.5 py-0.5 leading-none">
+              {notifications.filter((n) => !n.isRead).length}
+            </span>
+          )}
+        </Link>
       </div>
 
       {/* User info and logout section */}
